@@ -1,0 +1,8 @@
+{
+    "Blog": true,
+    "ContentManagement": true,
+    "UserManagement": true,
+    "Dashboard": true,
+    "Cms": true,
+    "Masterdata": true
+}

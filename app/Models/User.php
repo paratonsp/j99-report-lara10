@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
+    protected $table = 'v2_users';
     protected $fillable = [
         'uuid',
         'name',
@@ -30,10 +31,10 @@ class User extends Authenticatable
 
     public function scopeGetUserList($query)
     {
-        $query = DB::table("users")
-            ->select('users.uuid','users.name','users.email','users.role_uuid','role.title as rolename')
-            ->join("v2_role AS role", "role.uuid", "=", "users.role_uuid")
-            ->orderBy('users.created_at')
+        $query = DB::table("v2_users")
+            ->select('v2_users.uuid', 'v2_users.name', 'v2_users.email', 'v2_users.role_uuid', 'role.title as rolename')
+            ->join("v2_role AS role", "role.uuid", "=", "v2_users.role_uuid")
+            ->orderBy('v2_users.created_at')
             ->get();
 
         return $query;

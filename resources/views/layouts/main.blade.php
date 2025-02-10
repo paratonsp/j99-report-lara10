@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="robots" content="noindex,nofollow">
@@ -34,42 +35,45 @@
   <link rel="stylesheet" href="{{asset('assets/ui/plugins/daterangepicker/daterangepicker.css')}}">
   <!-- summernote -->
   <link rel="stylesheet" href="{{asset('assets/ui/plugins/summernote/summernote-bs4.min.css')}}">
+  <!-- app.css -->
+  <link href="{{ asset('assets/css/styles.css') }}" rel="stylesheet">
 </head>
+
 <body class="hold-transition sidebar-mini layout-fixed">
-<div class="wrapper">
+  <div class="wrapper">
 
-  <!-- Preloader -->
-  <div class="preloader flex-column justify-content-center align-items-center">
-    <img class="animation__shake" src="{{asset('assets/images/logo/j99-logo-wide.png')}}" alt="J99 logo preloader" >
-  </div>
+    <!-- Preloader -->
+    <div class="preloader flex-column justify-content-center align-items-center">
+      <img class="animation__shake" src="{{asset('assets/images/logo/j99-logo-wide.png')}}" alt="J99 logo preloader">
+    </div>
 
-  <!-- Navbar -->
-  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-    @include('layouts.shared.navbar')
-  </nav>
-  <!-- /.navbar -->
+    <!-- Navbar -->
+    <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+      @include('layouts.shared.navbar')
+    </nav>
+    <!-- /.navbar -->
 
-  <!-- Main Sidebar Container -->
-  <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <!-- Brand Logo -->
-    <a href="index3.html" class="brand-link">
+    <!-- Main Sidebar Container -->
+    <aside class="main-sidebar sidebar-dark-primary elevation-4">
+      <!-- Brand Logo -->
+      <a href="index3.html" class="brand-link">
         <img src="{{asset('assets/images/logo/j99-logo-wide.png')}}" alt="J99 Logo" height="38" style="opacity: .8">
         <span class="brand-text font-weight-light"></span>
-    </a>
+      </a>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <!-- Profile -->
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <!-- Profile -->
         @include('layouts.shared.profile')
-      <!-- Menu -->
+        <!-- Menu -->
         @include('layouts.shared.menu')
-      </nav>
-    </div>
-  </aside>
+        </nav>
+      </div>
+    </aside>
 
-  <!-- Content Wrapper. Contains page content -->
-  <div class="content-wrapper">
-    <div class="content-header">
+    <!-- Content Wrapper. Contains page content -->
+    <div class="content-wrapper">
+      <div class="content-header">
         <div class="container-fluid">
           <div class="row mb-2">
             <div class="col-sm-6">
@@ -77,84 +81,88 @@
             </div>
           </div><!-- /.row -->
         </div><!-- /.container-fluid -->
-    </div>
-    <section class="content">
+      </div>
+      <section class="content">
         <div class="container-fluid">
-            @yield('content')
+          @yield('content')
         </div>
-    </section>
+      </section>
+    </div>
+    <!-- /.content-wrapper -->
+    @include('layouts.shared.footer')
+
+    <!-- Control Sidebar -->
+    <aside class="control-sidebar control-sidebar-dark">
+      <!-- Control sidebar content goes here -->
+    </aside>
+    <!-- /.control-sidebar -->
   </div>
-  <!-- /.content-wrapper -->
-  @include('layouts.shared.footer')
+  <!-- ./wrapper -->
 
-  <!-- Control Sidebar -->
-  <aside class="control-sidebar control-sidebar-dark">
-    <!-- Control sidebar content goes here -->
-  </aside>
-  <!-- /.control-sidebar -->
-</div>
-<!-- ./wrapper -->
+  <!-- jQuery -->
+  <script src="{{asset('assets/ui/plugins/jquery/jquery.min.js')}}"></script>
+  <!-- jQuery UI 1.11.4 -->
+  <script src="{{asset('assets/ui/plugins/jquery-ui/jquery-ui.min.js')}}"></script>
+  <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+  <script>
+    $.widget.bridge('uibutton', $.ui.button)
+  </script>
+  <!-- Bootstrap 4 -->
+  <script src="{{asset('assets/ui/plugins/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
+  <!-- Select2 -->
+  <script src="{{asset('assets/ui/plugins/select2/js/select2.full.min.js')}}"></script>
+  <!-- DataTables  & Plugins -->
+  <script src="{{asset('assets/ui/plugins/datatables/jquery.dataTables.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/datatables-responsive/js/dataTables.responsive.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/datatables-responsive/js/responsive.bootstrap4.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/datatables-buttons/js/dataTables.buttons.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/datatables-buttons/js/buttons.bootstrap4.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/jszip/jszip.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/pdfmake/pdfmake.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/pdfmake/vfs_fonts.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/datatables-buttons/js/buttons.html5.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/datatables-buttons/js/buttons.print.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/datatables-buttons/js/buttons.colVis.min.js')}}"></script>
+  <!-- ChartJS -->
+  <script src="{{asset('assets/ui/plugins/chart.js/Chart.min.js')}}"></script>
+  <!-- Sparkline -->
+  <script src="{{asset('assets/ui/plugins/sparklines/sparkline.js')}}"></script>
+  <!-- JQVMap -->
+  <script src="{{asset('assets/ui/plugins/jqvmap/jquery.vmap.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/jqvmap/maps/jquery.vmap.usa.js')}}"></script>
+  <!-- jQuery Knob Chart -->
+  <script src="{{asset('assets/ui/plugins/jquery-knob/jquery.knob.min.js')}}"></script>
+  <!-- daterangepicker -->
+  <script src="{{asset('assets/ui/plugins/moment/moment.min.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/daterangepicker/daterangepicker.js')}}"></script>
+  <!-- Tempusdominus Bootstrap 4 -->
+  <script src="{{asset('assets/ui/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js')}}"></script>
+  <!-- Summernote -->
+  <script src="{{asset('assets/ui/plugins/summernote/summernote-bs4.min.js')}}"></script>
+  <!-- overlayScrollbars -->
+  <script src="{{asset('assets/ui/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js')}}"></script>
+  <!-- AdminLTE App -->
+  <script src="{{asset('assets/ui/dist/js/adminlte.js')}}"></script>
+  <script src="{{asset('assets/ui/dist/js/pages/dashboard.js')}}"></script>
+  <!-- Page specific script -->
+  <script>
+    $(function() {
+      $('.select2').select2()
 
-<!-- jQuery -->
-<script src="{{asset('assets/ui/plugins/jquery/jquery.min.js')}}"></script>
-<!-- jQuery UI 1.11.4 -->
-<script src="{{asset('assets/ui/plugins/jquery-ui/jquery-ui.min.js')}}"></script>
-<!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
-<script>
-  $.widget.bridge('uibutton', $.ui.button)
-</script>
-<!-- Bootstrap 4 -->
-<script src="{{asset('assets/ui/plugins/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
-<!-- Select2 -->
-<script src="{{asset('assets/ui/plugins/select2/js/select2.full.min.js')}}"></script>
-<!-- DataTables  & Plugins -->
-<script src="{{asset('assets/ui/plugins/datatables/jquery.dataTables.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/datatables-responsive/js/dataTables.responsive.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/datatables-responsive/js/responsive.bootstrap4.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/datatables-buttons/js/dataTables.buttons.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/datatables-buttons/js/buttons.bootstrap4.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/jszip/jszip.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/pdfmake/pdfmake.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/pdfmake/vfs_fonts.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/datatables-buttons/js/buttons.html5.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/datatables-buttons/js/buttons.print.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/datatables-buttons/js/buttons.colVis.min.js')}}"></script>
-<!-- ChartJS -->
-<script src="{{asset('assets/ui/plugins/chart.js/Chart.min.js')}}"></script>
-<!-- Sparkline -->
-<script src="{{asset('assets/ui/plugins/sparklines/sparkline.js')}}"></script>
-<!-- JQVMap -->
-<script src="{{asset('assets/ui/plugins/jqvmap/jquery.vmap.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/jqvmap/maps/jquery.vmap.usa.js')}}"></script>
-<!-- jQuery Knob Chart -->
-<script src="{{asset('assets/ui/plugins/jquery-knob/jquery.knob.min.js')}}"></script>
-<!-- daterangepicker -->
-<script src="{{asset('assets/ui/plugins/moment/moment.min.js')}}"></script>
-<script src="{{asset('assets/ui/plugins/daterangepicker/daterangepicker.js')}}"></script>
-<!-- Tempusdominus Bootstrap 4 -->
-<script src="{{asset('assets/ui/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js')}}"></script>
-<!-- Summernote -->
-<script src="{{asset('assets/ui/plugins/summernote/summernote-bs4.min.js')}}"></script>
-<!-- overlayScrollbars -->
-<script src="{{asset('assets/ui/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js')}}"></script>
-<!-- AdminLTE App -->
-<script src="{{asset('assets/ui/dist/js/adminlte.js')}}"></script>
-<script src="{{asset('assets/ui/dist/js/pages/dashboard.js')}}"></script>
-<!-- Page specific script -->
-<script>
-  $(function () {
-    $('.select2').select2()
-
-    //Initialize Select2 Elements
-    $('.select2bs4').select2({
-      theme: 'bootstrap4'
-    })
-    $("#datatable-def").DataTable({
-      "responsive": true, "lengthChange": false, "autoWidth": false,
-      "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-    }).buttons().container().appendTo('#datatable-def_wrapper .col-md-6:eq(0)');
-  });
-</script>
+      //Initialize Select2 Elements
+      $('.select2bs4').select2({
+        theme: 'bootstrap4'
+      })
+      $("#datatable-def").DataTable({
+        "responsive": true,
+        "lengthChange": false,
+        "autoWidth": false,
+        "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+      }).buttons().container().appendTo('#datatable-def_wrapper .col-md-6:eq(0)');
+    });
+  </script>
+  @yield('script')
 </body>
+
 </html>

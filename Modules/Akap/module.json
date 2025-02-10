@@ -1,0 +1,11 @@
+{
+    "name": "Akap",
+    "alias": "akap",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Akap\\app\\Providers\\AkapServiceProvider"
+    ],
+    "files": []
+}

@@ -1,0 +1,31 @@
+{
+    "name": "nwidart/pariwisata",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Pariwisata\\": "",
+            "Modules\\Pariwisata\\App\\": "app/",
+            "Modules\\Pariwisata\\Database\\Factories\\": "database/factories/",
+            "Modules\\Pariwisata\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Pariwisata\\Tests\\": "tests/"
+        }
+    }
+}

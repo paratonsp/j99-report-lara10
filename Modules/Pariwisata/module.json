@@ -1,0 +1,11 @@
+{
+    "name": "Pariwisata",
+    "alias": "pariwisata",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Pariwisata\\app\\Providers\\PariwisataServiceProvider"
+    ],
+    "files": []
+}

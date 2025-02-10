@@ -8,7 +8,7 @@ function getUserRoleInfo($email, $onlyParent = false)
 
 function getMenu($role_id, $onlyParent = false)
 {
-    $result = strval($role_id) !== strval(1) ? App\Models\Menu::getMenuWithRole(['role_id' => $role_id]) : App\Models\SuperUser::getMenuSU();
+    $result = App\Models\SuperUser::getMenuSU();
 
     if (!$onlyParent) {
         foreach ($result as $key => $value) {
@@ -24,16 +24,9 @@ function getMenu($role_id, $onlyParent = false)
 
 function getChildMenu($parent_id, $role_id)
 {
-    if (strval($role_id) !== strval(1) ) {
-        $result = App\Models\Menu::getChildMenu([
-            'parent_id' => $parent_id,
-            'role_id' => $role_id
-        ]);
-    } else {
-        $result = App\Models\SuperUser::getChildMenuSU([
-            'parent_id' => $parent_id,
-        ]);
-    }
+    $result = App\Models\SuperUser::getChildMenuSU([
+        'parent_id' => $parent_id,
+    ]);
 
     return $result;
 }
@@ -60,7 +53,7 @@ function permissionCheck($access, $directSlug = '')
 {
     $permissionData = Session('roleaccess_session');
     $slug = $directSlug ? $directSlug : getSlugUrl();
-    return in_array($slug.' '.$access, $permissionData);
+    return in_array($slug . ' ' . $access, $permissionData);
 }
 
 function setUserSession($email)
@@ -72,5 +65,4 @@ function setUserSession($email)
     session()->put('role_info_session', $userRoleInfo);
     session()->put('roleaccess_session', $roleAccess);
     session()->put('menu_session', $menu);
-
 }

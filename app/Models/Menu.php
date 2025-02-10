@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class Menu extends Model
 {
-    protected $table = 'v2_menu';
+    protected $table = 'report_menu';
     protected $fillable = [
         'title',
         'url',
@@ -23,10 +23,10 @@ class Menu extends Model
     {
         $email = isset($datas['email']) ? $datas['email'] : '';
 
-        $query = DB::table("users")
-            ->select('users.role_uuid','role.title','role.id as role_id')
-            ->join("v2_role AS role", "role.uuid", "=", "users.role_uuid")
-            ->where('users.email', $email)
+        $query = DB::table("v2_users")
+            ->select('v2_users.role_uuid', 'role.title', 'role.id as role_id')
+            ->join("v2_role AS role", "role.uuid", "=", "v2_users.role_uuid")
+            ->where('v2_users.email', $email)
             ->first();
 
         return $query;
@@ -35,7 +35,7 @@ class Menu extends Model
     public function scopeGetMenuParent($query)
     {
         $query = DB::table("v2_menu As menu")
-            ->select('menu.id','menu.title','menu.slug','menu.url','menu.icon')
+            ->select('menu.id', 'menu.title', 'menu.slug', 'menu.url', 'menu.icon')
             ->where('menu.parent_id', NULL)
             ->where('menu.status', 1)
             ->orderBy('menu.order')
@@ -47,7 +47,7 @@ class Menu extends Model
     public function scopeGetMenu($query)
     {
         $query = DB::table("v2_menu As menu")
-            ->select('menu.title','menu.slug','menu.url','menu.icon','menu2.title as parent_title')
+            ->select('menu.title', 'menu.slug', 'menu.url', 'menu.icon', 'menu2.title as parent_title')
             ->leftJoin("v2_menu AS menu2", "menu2.id", "=", "menu.parent_id")
             ->where('menu.status', 1)
             ->orderBy('menu2.title')

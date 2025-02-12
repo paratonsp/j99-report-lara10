@@ -4,17 +4,10 @@
 <?php
 $date = (isset($_GET['date'])) ? new DateTime(date("Y-m", strtotime($_GET['date']))) : new DateTime(date("Y-m"));
 $trip = (isset($_GET['trip'])) ? $_GET['trip'] : null;
-
 $month = (isset($_GET['month'])) ? $_GET['month'] : date("n");
 $year = (isset($_GET['year'])) ? $_GET['year'] : date("Y");
-$startYear = date('Y') - 1;
+$startYear = date('Y') - 2;
 $endYear = date('Y') + 1;
-
-// $interval = DateInterval::createFromDateString('1 month');
-// $period  = new DatePeriod($start, $interval, $end);
-// $formatter = new IntlDateFormatter('en_US', IntlDateFormatter::LONG, IntlDateFormatter::SHORT);
-// $monthFormat = $formatter->setPattern('MMMM yyyy');
-// $yearFormat = $formatter->setPattern('MMMM yyyy');
 ?>
 
 <div class="row mb-2">
@@ -24,15 +17,15 @@ $endYear = date('Y') + 1;
                 <select name="routeGroup" id="routeGroup" class="custom-select">
                     <option value="">Semua Rute</option>
                     <?php foreach ($route_group as $rg)
-                        if ($trip == ($rg->start_point . 'N' . $rg->end_point)) {
-                            echo "<option value= " . $rg->start_point . 'N' .  $rg->end_point . " selected>" . $rg->name . "</option>";
+                        if ($trip == ($rg->id)) {
+                            echo "<option value= " . $rg->id . " selected>" . $rg->name_x . "</option>";
                         } else {
-                            echo "<option value= " . $rg->start_point . 'N' .  $rg->end_point . ">" . $rg->name . "</option>";
+                            echo "<option value= " . $rg->id . ">" . $rg->name_x . "</option>";
                         }
                     ?>
                 </select>
             </div>
-            <div class="col-md-3 col-6">
+            <div class="col-md-3 col-6 mb-3">
                 <select name="monthPicker" id="monthPicker" class="custom-select">
                     <?php
                     for ($mnth = 1; $mnth <= 12; $mnth++) {
@@ -46,7 +39,7 @@ $endYear = date('Y') + 1;
                     ?>
                 </select>
             </div>
-            <div class="col-md-3 col-6">
+            <div class="col-md-3 col-6 mb-3">
                 <select name="yearPicker" id="yearPicker" class="custom-select">
                     <?php
                     foreach (range($startYear, $endYear) as $x) {
@@ -60,12 +53,70 @@ $endYear = date('Y') + 1;
                 </select>
             </div>
         </div>
-        &nbsp;
-        <div class="incomeSection">
+        <div class="incomeSection mb-5">
             <p>Total Pendapatan: <strong>{{ $income }}</strong></p>
         </div>
-        &nbsp;
+
+        <div class="col-md-6 col-12 mb-5">
+            <h3>Penumpang Harian</h3>
+            <x-chartjs-component :chart="$chartDailyPassengger" />
+        </div>
+        <div class="col-md-6 col-12 mb-5">
+            <h3>Penumpang Harian</h3>
+            <x-chartjs-component :chart="$chartTicketSupport" />
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 col-12 mb-3">
+                <h3>Jadwal Buka Sementara</h3>
+                <table id="datatable" class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Kendala</th>
+                            <th>Awal</th>
+                            <th>Akhir</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($trip_assign_open as $key => $item)
+                        <tr>
+                            <td width="20" class="text-center">{{ intval($key) + 1 }}</td>
+                            <td>{{ $item->causes }}</td>
+                            <td>{{ $item->date }}</td>
+                            <td>{{ $item->date_finish }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6 col-12 mb-3">
+                <h3>Jadwal Tutup Sementara</h3>
+                <table id="datatable" class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Kendala</th>
+                            <th>Awal</th>
+                            <th>Akhir</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($trip_assign_close as $key => $item)
+                        <tr>
+                            <td width="20" class="text-center">{{ intval($key) + 1 }}</td>
+                            <td>{{ $item->causes }}</td>
+                            <td>{{ $item->date }}</td>
+                            <td>{{ $item->date_finish }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
+</div>
 </div>
 
 @endsection

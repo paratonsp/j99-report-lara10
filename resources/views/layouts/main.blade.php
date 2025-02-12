@@ -56,9 +56,10 @@
     <!-- Main Sidebar Container -->
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
       <!-- Brand Logo -->
-      <a href="index3.html" class="brand-link">
-        <img src="{{asset('assets/images/logo/j99-logo-wide.png')}}" alt="J99 Logo" height="38" style="opacity: .8">
-        <span class="brand-text font-weight-light"></span>
+      <a href="/" class="brand-link">
+        <img src="{{asset('assets/images/logo/j99-logo-square.png')}}" alt="J99 Logo" height="30" style="opacity: .8">
+        &nbsp;
+        <span class="brand-text font-weight-light"><strong>Juragan99 Trans</strong></span>
       </a>
 
       <!-- Sidebar -->
@@ -130,7 +131,7 @@
   <script src="{{asset('assets/ui/plugins/sparklines/sparkline.js')}}"></script>
   <!-- JQVMap -->
   <script src="{{asset('assets/ui/plugins/jqvmap/jquery.vmap.min.js')}}"></script>
-  <script src="{{asset('assets/ui/plugins/jqvmap/maps/jquery.vmap.usa.js')}}"></script>
+  <script src="{{asset('assets/ui/plugins/jqvmap/maps/jquery.vmap.world.js')}}"></script>
   <!-- jQuery Knob Chart -->
   <script src="{{asset('assets/ui/plugins/jquery-knob/jquery.knob.min.js')}}"></script>
   <!-- daterangepicker -->

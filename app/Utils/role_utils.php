@@ -61,7 +61,6 @@ function setUserSession($email)
     $userRoleInfo = getUserRoleInfo($email);
     $roleAccess = getRoleAccessData($userRoleInfo->role_id);
     $menu = getMenu($userRoleInfo->role_id);
-    dd($menu);
 
     session()->put('role_info_session', $userRoleInfo);
     session()->put('roleaccess_session', $roleAccess);

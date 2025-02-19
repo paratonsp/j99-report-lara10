@@ -1,0 +1,31 @@
+{
+    "name": "nwidart/pengaturan",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Pengaturan\\": "",
+            "Modules\\Pengaturan\\App\\": "app/",
+            "Modules\\Pengaturan\\Database\\Factories\\": "database/factories/",
+            "Modules\\Pengaturan\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Pengaturan\\Tests\\": "tests/"
+        }
+    }
+}

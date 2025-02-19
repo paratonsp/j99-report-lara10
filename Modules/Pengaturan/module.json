@@ -1,0 +1,11 @@
+{
+    "name": "Pengaturan",
+    "alias": "pengaturan",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Pengaturan\\app\\Providers\\PengaturanServiceProvider"
+    ],
+    "files": []
+}

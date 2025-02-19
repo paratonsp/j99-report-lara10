@@ -57,14 +57,7 @@ $endYear = date('Y') + 1;
             <p>Total Pendapatan: <strong>{{ $income }}</strong></p>
         </div>
 
-        <div class="col-md-6 col-12 mb-5">
-            <h3>Penumpang Harian</h3>
-            <x-chartjs-component :chart="$chartDailyPassengger" />
-        </div>
-        <div class="col-md-6 col-12 mb-5">
-            <h3>Penumpang Harian</h3>
-            <x-chartjs-component :chart="$chartTicketSupport" />
-        </div>
+
 
         <div class="row">
             <div class="col-md-6 col-12 mb-3">

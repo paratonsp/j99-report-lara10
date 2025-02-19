@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Akap\app\Http\Controllers\AkapMonthlyController;
-use Modules\Akap\app\Http\Controllers\AkapDailyController;
+use Modules\Pengaturan\app\Http\Controllers\PengaturanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,7 +14,9 @@ use Modules\Akap\app\Http\Controllers\AkapDailyController;
 |
 */
 
-Route::prefix('akap')->group(function () {
-    Route::get('bulanan', [AkapMonthlyController::class, 'index']);
-    Route::get('harian', [AkapDailyController::class, 'index']);
+Route::prefix('pengaturan')->group(function () {
+    Route::get('akap', [PengaturanController::class, 'akap']);
+    Route::post('akap', [PengaturanController::class, 'akapCreate']);
+    Route::patch('akap', [PengaturanController::class, 'akapUpdate']);
+    Route::get('pariwisata', [PengaturanController::class, 'pariwisata']);
 });

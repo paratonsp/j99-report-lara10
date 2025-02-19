@@ -11,12 +11,14 @@
     @else
     <li class="nav-item {{ (request()->segment(1) == $menu->url) ? 'menu-open' : '' }}">
       <a href="#" class="nav-link  {{ (request()->segment(1) == $menu->url) ? 'active' : '' }}">
+        <i class="{{ $menu->icon }}"></i>
         <p>
           {{ $menu->title }}
           <i class="right fas fa-angle-left"></i>
         </p>
       </a>
       <ul class="nav nav-treeview">
+
         @foreach ($menu->child as $child)
         @php
         $segmentCheck = (isset(explode("/", $child->url)[1]))

@@ -99,8 +99,8 @@ class Akap extends Model
     public function scopeGetDailyPassengger($query, $param)
     {
         $query = DB::table('tkt_booking as tb');
-        if (isset($param['trip_id_no'])) {
-            $query = $query->whereIn('tb.trip_id_no', $param['trip_id_no']);
+        if (isset($param['trip_group'])) {
+            $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
         }
         $query = $query->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year'])
@@ -117,8 +117,8 @@ class Akap extends Model
     public function scopeGetTicketingSupport($query, $param)
     {
         $query = DB::table('tkt_booking as tb');
-        if (isset($param['trip_id_no'])) {
-            $query = $query->whereIn('tb.trip_id_no', $param['trip_id_no']);
+        if (isset($param['trip_group'])) {
+            $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
         }
         $query = $query->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year'])
@@ -220,6 +220,26 @@ class Akap extends Model
         $query = $query->groupBy('tb.trip_route_id')
             ->select(
                 DB::raw('tb.trip_route_id, SUM(tb.total_seat) as passengger')
+            )
+            ->get();
+
+        return $query;
+    }
+
+    public function scopeGetBookByClass($query, $param)
+    {
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_assign_group'])) {
+            $query = $query->whereIn('tb.tras_id', $param['trip_assign_group']);
+        }
+        $query = $query->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code');
+        $query = $query->join('fleet_type as ft', 'tb.fleet_type', '=', 'ft.id');
+        $query = $query->where('tbh.payment_status', 1);
+        $query = $query->whereMonth('tb.booking_date', $param['month']);
+        $query = $query->whereYear('tb.booking_date', $param['year']);
+        $query = $query->groupBy('tb.fleet_type')
+            ->select(
+                DB::raw('ft.type, SUM(tb.total_seat) as passengger')
             )
             ->get();
 

@@ -24,9 +24,6 @@ class AkapMonthlyController extends Controller
         $trip_assign_group = null;
         $total_days = Carbon::now()->month($month)->daysInMonth;
 
-        $trip_assign_open = null;
-        $trip_assign_close = null;
-
         if ($request->has('trip')) {
             $trip = $request->input('trip');
             $trip_route_group = Akap::getTripRouteGroup($trip);
@@ -70,6 +67,7 @@ class AkapMonthlyController extends Controller
             }
         }
 
+        //PARAMETER
         $param = [
             'trip_route_grouped' => $trip_route_grouped,
             'trip_route_group' => $trip_route_group,
@@ -79,19 +77,20 @@ class AkapMonthlyController extends Controller
             'month' => $month,
             'year' => $year,
         ];
-
         $param['trip_group'] = Akap::getTripGroup($param)->toArray();
         $param['trip_group'] = join(',', array_column($param['trip_group'], 'trip_id'));
         $param['trip_group'] = explode(",", $param['trip_group']);
-
         $param['trip_assign_group'] = Akap::getTripAssignGroup($param)->toArray();
         $param['trip_assign_group'] = join(',', array_column($param['trip_assign_group'], 'id'));
         $param['trip_assign_group'] = explode(",", $param['trip_assign_group']);
 
+        //CHART DATA
+        $data['occupancy_by_route'] = ($request->has('trip')) ? $this->nullChart() : $this->occupancyByRouteChart($param);
+        $data['occupancy_by_class'] = $this->occupancyByClassChart($param);
+        $data['ticketing_support'] = $this->ticketingSupportChart($param);
+        $data['daily_passengger'] = $this->dailyPassenggerChart($param);
 
-        $jumlah_seat_terjual = $this->jumlahSeatTerjual($param);
-
-
+        //DATA
         $data['income'] = Number::currency(Akap::getIncome($param), 'IDR');
         $data['route_group'] = Akap::getTripRouteGroup();
         $data['title'] = 'REPORT AKAP BULANAN';
@@ -101,7 +100,30 @@ class AkapMonthlyController extends Controller
         return view('akap::monthly', $data);
     }
 
-    public function jumlahSeatTerjual($param)
+    public function nullChart()
+    {
+
+        $label = array('0');
+        $value = array(0);
+
+        $data = Chartjs::build()
+            ->name("NullChart")
+            ->type("bar")
+            ->size(["width" => 400, "height" => 150])
+            ->labels($label)
+            ->datasets([
+                [
+                    "label" => "null",
+                    "data" => $value,
+                    'backgroundColor' => generateColor(0),
+                    'stack' => 'Stack 0',
+                ]
+            ]);
+
+        return $data;
+    }
+
+    public function occupancyByRouteChart($param)
     {
         $class_info = $this->classInfo($param);
         $book_seat = Akap::getBookSeat($param);
@@ -123,54 +145,111 @@ class AkapMonthlyController extends Controller
             }
         }
 
-        // $data['chartDailyPassengger'] = Chartjs::build()
-        //     ->name("DailyPassengger")
-        //     ->type("bar")
-        //     ->size(["width" => 400, "height" => 200])
-        //     ->labels($keys)
-        //     ->datasets([
-        //         [
-        //             "label" => "Penumpang",
-        //             "data" => $values,
-        //             'backgroundColor' => generateColor(0),
-        //             'stack' => 'Stack 0',
-        //         ],
-        //         [
-        //             "label" => "Penumpang 2",
-        //             "data" => $values,
-        //             'backgroundColor' => generateColor(1),
-        //             'stack' => 'Stack 1S',
-        //         ]
-        //     ]);
+        $label = array();
+        $max_seat = array();
+        $seat = array();
 
-        return $param;
+
+        foreach ($param['trip_route_grouped'] as $value) {
+            array_push($label, $value->name);
+            array_push($max_seat, $value->max_seat);
+            array_push($seat, $value->passengger);
+        }
+
+        $data = Chartjs::build()
+            ->name("OccupancyByRoute")
+            ->type("bar")
+            ->size(["width" => 400, "height" => 150])
+            ->labels($label)
+            ->datasets([
+                [
+                    "label" => "Seat Max",
+                    "data" => $max_seat,
+                    'backgroundColor' => generateColor(0),
+                    'stack' => 'Stack 0',
+                ],
+                [
+                    "label" => "Seat Terjual",
+                    "data" => $seat,
+                    'backgroundColor' => generateColor(1),
+                    'stack' => 'Stack 1',
+                ]
+            ]);
+
+        return $data;
     }
 
-    public function penumpangHarian($param)
+    public function occupancyByClassChart($param)
     {
-        // $daily_passengger = Akap::getDailyPassengger($paramIncome);
-        // $keys = $daily_passengger->keys()->toArray();
-        // $values = $daily_passengger->values()->toArray();
+        $class_info = $this->classInfo($param);
+        $book_seat = Akap::getBookByClass($param);
 
-        // $data['chartDailyPassengger'] = Chartjs::build()
-        //     ->name("DailyPassengger")
-        //     ->type("bar")
-        //     ->size(["width" => 400, "height" => 200])
-        //     ->labels($keys)
-        //     ->datasets([
-        //         [
-        //             "label" => "Penumpang",
-        //             "data" => $values,
-        //             'backgroundColor' => generateColor(0),
-        //             'stack' => 'Stack 0',
-        //         ],
-        //         [
-        //             "label" => "Penumpang 2",
-        //             "data" => $values,
-        //             'backgroundColor' => generateColor(1),
-        //             'stack' => 'Stack 0',
-        //         ]
-        //     ]);
+
+        foreach ($book_seat as $value) {
+            $value->max_seat = 0;
+            foreach ($class_info as $item) {
+                if ($item->type == $value->type) {
+                    $total_days = $item->total_seat * $item->days_active;
+                    $value->max_seat = $value->max_seat + $total_days;
+                }
+            }
+        }
+
+        $label = array();
+        $max_seat = array();
+        $seat = array();
+
+
+        foreach ($book_seat as $value) {
+            array_push($label, $value->type);
+            array_push($max_seat, $value->max_seat);
+            array_push($seat, $value->passengger);
+        }
+
+
+        $data = Chartjs::build()
+            ->name("OccupancyByClass")
+            ->type("bar")
+            ->size(["width" => 400, "height" => 150])
+            ->labels($label)
+            ->datasets([
+                [
+                    "label" => "Seat Max",
+                    "data" => $max_seat,
+                    'backgroundColor' => generateColor(0),
+                    'stack' => 'Stack 0',
+                ],
+                [
+                    "label" => "Seat Terjual",
+                    "data" => $seat,
+                    'backgroundColor' => generateColor(1),
+                    'stack' => 'Stack 1',
+                ]
+            ]);
+
+        return $data;
+    }
+
+    public function dailyPassenggerChart($param)
+    {
+        $daily_passengger = Akap::getDailyPassengger($param);
+        $keys = $daily_passengger->keys()->toArray();
+        $values = $daily_passengger->values()->toArray();
+
+        $data = Chartjs::build()
+            ->name("DailyPassengger")
+            ->type("bar")
+            ->size(["width" => 400, "height" => 150])
+            ->labels($keys)
+            ->datasets([
+                [
+                    "label" => "Penumpang",
+                    "data" => $values,
+                    'backgroundColor' => generateColor(0),
+                    'stack' => 'Stack 0',
+                ]
+            ]);
+        return $data;
     }
 
     public function daftarAbsensiBus($param)
@@ -195,44 +274,42 @@ class AkapMonthlyController extends Controller
         return $daftar_absensi_bus;
     }
 
-    public function ticketingSupport($param)
+    public function ticketingSupportChart($param)
     {
-        // $paramX = [
-        //     'month' => $month,
-        //     'year' => $year,
-        //     'trip_id_no' => $trip_group,
-        // ];
-        // $x = Akap::getTicketingSupport($paramX);
+        $x = Akap::getTicketingSupport($param);
 
-        // $ticket_support_label = $x->pluck('name')->toArray();
-        // $ticket_support_value = $x->pluck('passengger')->toArray();
-        // $data['chartTicketSupport'] = Chartjs::build()
-        //     ->name("TicketSupport")
-        //     ->type("horizontalBar")
-        //     ->size(["width" => 400, "height" => 200])
-        //     ->labels($ticket_support_label)
-        //     ->datasets([
-        //         [
-        //             "label" => "Penumpang",
-        //             "data" => $ticket_support_value,
-        //             'backgroundColor' => generateColor(0),
-        //             'stack' => 'Stack 0',
+        $ticket_support_label = $x->pluck('name')->toArray();
+        $ticket_support_value = $x->pluck('passengger')->toArray();
+        $data = Chartjs::build()
+            ->name("TicketSupport")
+            ->type("horizontalBar")
+            ->size(["width" => 400, "height" => 150])
+            ->labels($ticket_support_label)
+            ->datasets([
+                [
+                    "label" => "Penumpang",
+                    "data" => $ticket_support_value,
+                    'backgroundColor' => generateColor(0),
+                    'stack' => 'Stack 0',
 
-        //         ]
-        //     ])->options([
-        //         'plugins' => [
-        //             'title' => [
-        //                 'display' => true,
-        //                 'text' => 'Monthly User Registrations'
-        //             ]
-        //         ]
-        //     ]);
+                ]
+            ])->options([
+                'plugins' => [
+                    'title' => [
+                        'display' => true,
+                        'text' => 'Monthly User Registrations'
+                    ]
+                ]
+            ]);
+
+        return $data;
     }
 
     public function classInfo($param)
     {
 
         $classInfo = Akap::getAkapClassInfoList($param);
+
 
         foreach ($classInfo as $value) {
             $value->days_active = 0;
@@ -256,6 +333,7 @@ class AkapMonthlyController extends Controller
                 $value->days_active = $temp_assign[$value->tras_id];
             }
         }
+
 
         return $classInfo;
     }

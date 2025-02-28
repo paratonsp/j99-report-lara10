@@ -124,10 +124,8 @@ class Akap extends Model
             ->whereYear('tb.booking_date', $param['year'])
             ->where('tb.tkt_refund_id', NULL)
             ->join('tkt_booking_head AS tbh', 'tbh.booking_code', '=', 'tb.booking_code')
-            ->leftJoin('user AS us', 'us.id', '=', 'tbh.agent')
-            ->groupBy('tbh.agent')
             ->select(
-                DB::raw('IFNULL(us.firstname, "Online") as name, SUM(tb.total_seat) AS passengger')
+                DB::raw('tbh.booker, tb.total_seat AS passengger')
             )
             ->get();
 

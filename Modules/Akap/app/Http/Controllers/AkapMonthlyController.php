@@ -48,7 +48,7 @@ class AkapMonthlyController extends Controller
             }
         } else {
             $trip_route_grouped = Akap::getTripRouteGroup();
-            foreach ($trip_route_grouped as $key => $value) {
+            foreach ($trip_route_grouped as $value) {
                 $temp_route = array();
                 $rx = explode(",", $value->route_x);
                 foreach ($rx as $rxv) {
@@ -276,29 +276,49 @@ class AkapMonthlyController extends Controller
 
     public function ticketingSupportChart($param)
     {
-        $x = Akap::getTicketingSupport($param);
+        $akap = Akap::getTicketingSupport($param);
 
-        $ticket_support_label = $x->pluck('name')->toArray();
-        $ticket_support_value = $x->pluck('passengger')->toArray();
+        // dd($akap);
+
+
+        $onlineLabel = "Online";
+        $onlineValue = 0;
+
+        $agenLabel = "Agen";
+        $agenValue = 0;
+
+        $kpLabel = "KP";
+        $kpValue = 0;
+
+        $listAgen = array('no-reply@traveloka.com', 'ybc@gmail.com');
+
+
+        foreach ($akap as $value) {
+            if (in_array($value->booker, $listAgen)) {
+                $agenValue = $agenValue + $value->passengger;
+            } else {
+                if (strstr(strtolower($value->booker), 'kantorperwakilan')) {
+                    $kpValue = $kpValue + $value->passengger;
+                } else {
+                    $onlineValue = $onlineValue + $value->passengger;
+                }
+            }
+        }
+
+        $label = array($onlineLabel, $agenLabel, $kpLabel);
+        $value = array($onlineValue, $agenValue, $kpValue);
         $data = Chartjs::build()
             ->name("TicketSupport")
             ->type("horizontalBar")
             ->size(["width" => 400, "height" => 150])
-            ->labels($ticket_support_label)
+            ->labels($label)
             ->datasets([
                 [
                     "label" => "Penumpang",
-                    "data" => $ticket_support_value,
+                    "data" => $value,
                     'backgroundColor' => generateColor(0),
                     'stack' => 'Stack 0',
 
-                ]
-            ])->options([
-                'plugins' => [
-                    'title' => [
-                        'display' => true,
-                        'text' => 'Monthly User Registrations'
-                    ]
                 ]
             ]);
 

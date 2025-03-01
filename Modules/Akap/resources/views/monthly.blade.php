@@ -60,12 +60,20 @@ $endYear = date('Y') + 1;
                 <p><strong>{{ $income }}</strong></p>
             </div>
 
-            <div class="col-lg-4 col-12 mb-5 mt-3">
-                <p>Total Pendapatan:</p>
-                <p><strong>{{ $income }}</strong></p>
+            <div class="col-lg-4 col-12 mb-5 mt-3 align-content-center">
+                <div class="row col-12">
+                    <div class="col-6 align-content-center m-0 p-0">
+                        <x-chartjs-component :chart="$total_keterisian_kursi['chart']" />
+                    </div>
+                    <div class="col-6 align-content-center">
+                        <p class="mb-0">Total Keterisian Seat:</p>
+                        <p class="mb-0"><strong>{{ $total_keterisian_kursi['percentage'] }}</strong></p>
+                        <p class="mb-0"><strong>{{ $total_keterisian_kursi['description'] }}</strong></p>
+                    </div>
+                </div>
             </div>
         </div>
-        
+
 
         <div class="row mb-5">
             <div class="col-12 incomeSection">
@@ -80,8 +88,18 @@ $endYear = date('Y') + 1;
             <div class="col-12 incomeSection">
                 <p class>Occupancy By Route</p>
             </div>
-            <div class="col-12">
-                <x-chartjs-component :chart="$occupancy_by_route" />
+            <div class="col-12 mb-3">
+                <x-chartjs-component :chart="$occupancy_by_route_bar" />
+            </div>
+
+            <div class="row col-12 justify-content-center">
+                @foreach ($occupancy_by_route_doughnut as $key => $item)
+                <div class="col-4 col-md-3 col-lg-2 mb-3" style="justify-items: center;">
+                    <x-chartjs-component :chart="$item['chart']" />
+                    <p class="mb-0"><strong>{{$item['percentage']}}</strong></p>
+                    <p class="mb-0">{{$item['label']}}</p>
+                </div>
+                @endforeach
             </div>
         </div>
 
@@ -89,8 +107,18 @@ $endYear = date('Y') + 1;
             <div class="col-12 incomeSection">
                 <p class>Occupancy By Class</p>
             </div>
-            <div class="col-12">
-                <x-chartjs-component :chart="$occupancy_by_class" />
+            <div class="col-12 mb-3">
+                <x-chartjs-component :chart="$occupancy_by_class_bar" />
+            </div>
+
+            <div class="row col-12 justify-content-center">
+                @foreach ($occupancy_by_class_doughnut as $key => $item)
+                <div class="col-4 col-md-3 col-lg-2 mb-3" style="justify-items: center;">
+                    <x-chartjs-component :chart="$item['chart']" />
+                    <p class="mb-0"><strong>{{$item['percentage']}}</strong></p>
+                    <p class="mb-0">{{$item['label']}}</p>
+                </div>
+                @endforeach
             </div>
         </div>
 

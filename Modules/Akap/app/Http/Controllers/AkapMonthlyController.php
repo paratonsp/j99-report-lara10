@@ -85,10 +85,13 @@ class AkapMonthlyController extends Controller
         $param['trip_assign_group'] = explode(",", $param['trip_assign_group']);
 
         //CHART DATA
-        $data['occupancy_by_route'] = ($request->has('trip')) ? $this->nullChart() : $this->occupancyByRouteChart($param);
-        $data['occupancy_by_class'] = $this->occupancyByClassChart($param);
+        $data['occupancy_by_route_bar'] = $this->occupancyByRouteChart($param)['bar_chart'];
+        $data['occupancy_by_route_doughnut'] = $this->occupancyByRouteChart($param)['doughnut_chart'];
+        $data['occupancy_by_class_bar'] = $this->occupancyByClassChart($param)['bar_chart'];
+        $data['occupancy_by_class_doughnut'] = $this->occupancyByClassChart($param)['doughnut_chart'];
         $data['ticketing_support'] = $this->ticketingSupportChart($param);
         $data['daily_passengger'] = $this->dailyPassenggerChart($param);
+        $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param);
 
         //DATA
         $data['income'] = Number::currency(Akap::getIncome($param), 'IDR');
@@ -100,7 +103,9 @@ class AkapMonthlyController extends Controller
         return view('akap::monthly', $data);
     }
 
-    public function nullChart()
+
+
+    public function nullChart($type)
     {
 
         $label = array('0');
@@ -108,15 +113,67 @@ class AkapMonthlyController extends Controller
 
         $data = Chartjs::build()
             ->name("NullChart")
-            ->type("bar")
-            ->size(["width" => 400, "height" => 150])
+            ->type($type)
+            ->size(["width" => 40, "height" => 15])
             ->labels($label)
             ->datasets([
                 [
                     "label" => "null",
                     "data" => $value,
                     'backgroundColor' => generateColor(0),
-                    'stack' => 'Stack 0',
+                ]
+            ]);
+
+        return $data;
+    }
+
+    public function totalKeterisianKursiChart($param)
+    {
+
+        $class_info = $this->classInfo($param);
+        $book_seat = Akap::getBookSeat($param);
+
+        $bookedSeat = 0;
+        $totalSeat = 0;
+
+        foreach ($param['trip_route_grouped'] as $value) {
+            foreach ($book_seat as $item) {
+                if (in_array($item->trip_route_id, $value->route)) {
+                    $bookedSeat = $bookedSeat + $item->passengger;
+                }
+            }
+
+            foreach ($class_info as $item) {
+                if (in_array($item->trip_route_id, $value->route)) {
+                    $total_days = $item->total_seat * $item->days_active;
+                    $totalSeat = $totalSeat + $total_days;
+                }
+            }
+        }
+
+        $leftSeat = $totalSeat - $bookedSeat;
+        if ($leftSeat < 0) $leftSeat = 0;
+
+        $percentage = 0;
+        if ($bookedSeat != 0 && $totalSeat != 0) $percentage = ($bookedSeat * 100 / $totalSeat);
+        $percentage = number_format($percentage, 2, '.', '');
+        $data['percentage'] = "{$percentage}%";
+
+        $data['description'] = "{$bookedSeat} Seat / {$totalSeat} Max Seat";
+
+        $data['chart'] = Chartjs::build()
+            ->name("TotalKeterisianKursi")
+            ->type("doughnut")
+            ->size(["width" => 400, "height" => 150])
+            ->labels(['Seat Terjual', 'Sisa Seat'])
+            ->datasets([
+                [
+                    'backgroundColor' => [generateColor(1), generateColor(0)],
+                    "data" => [$bookedSeat, $leftSeat],
+                ]
+            ])->options([
+                'plugins' => [
+                    'legend' => false
                 ]
             ]);
 
@@ -156,8 +213,8 @@ class AkapMonthlyController extends Controller
             array_push($seat, $value->passengger);
         }
 
-        $data = Chartjs::build()
-            ->name("OccupancyByRoute")
+        $data['bar_chart'] = Chartjs::build()
+            ->name("OccupancyByRouteBar")
             ->type("bar")
             ->size(["width" => 400, "height" => 150])
             ->labels($label)
@@ -175,6 +232,42 @@ class AkapMonthlyController extends Controller
                     'stack' => 'Stack 1',
                 ]
             ]);
+
+        if (count($param['trip_route_grouped']) > 0) {
+            foreach ($param['trip_route_grouped'] as $key => $value) {
+                $leftSeat = $value->max_seat - $value->passengger;
+                if ($leftSeat < 0) $leftSeat = 0;
+
+                $percentage = 0;
+                if ($value->max_seat != 0 && $value->passengger != 0) $percentage = ($value->passengger * 100 / $value->max_seat);
+                $percentage = number_format($percentage, 2, '.', '');
+                $data['doughnut_chart'][$key]['percentage'] = "{$percentage}%";
+                $data['doughnut_chart'][$key]['label'] = $value->name;
+                $data['doughnut_chart'][$key]['chart'] = Chartjs::build()
+                    ->name("OccupancyByClassDoughnut{$key}")
+                    ->type("doughnut")
+                    ->size(["width" => 400, "height" => 150])
+                    ->labels(['Seat Terjual', 'Sisa Seat'])
+                    ->datasets([
+                        [
+                            'backgroundColor' => [generateColor(1), generateColor(0)],
+                            "data" => [$value->passengger, $leftSeat],
+                        ]
+                    ])->options([
+                        'plugins' => [
+                            'legend' => false
+                        ]
+                    ]);
+            }
+        } else {
+            $data['doughnut_chart'][0]['percentage'] = "";
+            $data['doughnut_chart'][0]['label'] = "";
+            $data['doughnut_chart'][0]['chart'] = $this->nullChart('doughnut');
+        }
+
+        // dd($data['doughnut_chart']);
+
+
 
         return $data;
     }
@@ -207,7 +300,7 @@ class AkapMonthlyController extends Controller
         }
 
 
-        $data = Chartjs::build()
+        $data['bar_chart'] = Chartjs::build()
             ->name("OccupancyByClass")
             ->type("bar")
             ->size(["width" => 400, "height" => 150])
@@ -227,6 +320,44 @@ class AkapMonthlyController extends Controller
                 ]
             ]);
 
+
+        if (count($book_seat) > 0) {
+            foreach ($book_seat as $key => $value) {
+                $leftSeat = $value->max_seat - $value->passengger;
+                if ($leftSeat < 0) $leftSeat = 0;
+
+                $percentage = 0;
+                if ($value->max_seat != 0 && $value->passengger != 0) $percentage = ($value->passengger * 100 / $value->max_seat);
+                $percentage = number_format($percentage, 2, '.', '');
+
+                $data['doughnut_chart'][$key]['percentage'] = "{$percentage}%";
+                $data['doughnut_chart'][$key]['label'] = $value->type;
+                $data['doughnut_chart'][$key]['chart'] = Chartjs::build()
+                    ->name("OccupancyByRouteDoughnut{$key}")
+                    ->type("doughnut")
+                    ->size(["width" => 400, "height" => 150])
+                    ->labels(['Seat Terjual', 'Sisa Seat'])
+                    ->datasets([
+                        [
+                            'backgroundColor' => [generateColor(1), generateColor(0)],
+                            "data" => [$value->passengger, $leftSeat],
+                        ]
+                    ])->options([
+                        'plugins' => [
+                            'legend' => false
+                        ]
+                    ]);
+            }
+        } else {
+            $data['doughnut_chart'][0]['percentage'] = "";
+            $data['doughnut_chart'][0]['label'] = "";
+            $data['doughnut_chart'][0]['chart'] = $this->nullChart('doughnut');
+        }
+
+        // dd($data['doughnut_chart']);
+
+
+
         return $data;
     }
 
@@ -245,7 +376,7 @@ class AkapMonthlyController extends Controller
                 [
                     "label" => "Penumpang",
                     "data" => $values,
-                    'backgroundColor' => generateColor(0),
+                    'backgroundColor' => generateColor(1),
                     'stack' => 'Stack 0',
                 ]
             ]);
@@ -307,6 +438,7 @@ class AkapMonthlyController extends Controller
 
         $label = array($onlineLabel, $agenLabel, $kpLabel);
         $value = array($onlineValue, $agenValue, $kpValue);
+        $color = array(generateColor(0), generateColor(1), generateColor(2));
         $data = Chartjs::build()
             ->name("TicketSupport")
             ->type("horizontalBar")
@@ -314,11 +446,14 @@ class AkapMonthlyController extends Controller
             ->labels($label)
             ->datasets([
                 [
-                    "label" => "Penumpang",
                     "data" => $value,
-                    'backgroundColor' => generateColor(0),
+                    'backgroundColor' => $color,
                     'stack' => 'Stack 0',
 
+                ]
+            ])->options([
+                'plugins' => [
+                    'legend' => false
                 ]
             ]);
 

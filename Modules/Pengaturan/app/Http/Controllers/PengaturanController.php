@@ -28,6 +28,8 @@ class PengaturanController extends Controller
             }
         }
 
+        // dd($data['selected_trip_route']);
+
 
         $data['title'] = 'Pengaturan Akap';
         return view('pengaturan::akap', $data);

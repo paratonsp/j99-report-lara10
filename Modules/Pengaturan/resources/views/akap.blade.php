@@ -74,7 +74,7 @@
                         <label>Grup Rute B</label>
                         <select class="select2 select2-hidden-accessible" data-placeholder="Pilih Rute ID" data-width="100%" name="data[{{$key}}][route_y][]" multiple>
                             @php
-                            $value->route_y = explode(" ,", $value->route_y);
+                            $value->route_y = explode(",", $value->route_y);
                             @endphp
 
                             @foreach ($all_trip_route as $item)

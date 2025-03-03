@@ -124,6 +124,15 @@ $endYear = date('Y') + 1;
 
         <div class="row mb-5">
             <div class="col-12 incomeSection">
+                <p class>Perbandingan Bulan Lalu</p>
+            </div>
+            <div class="col-12">
+                <x-chartjs-component :chart="$perbandingan_bulan_lalu" />
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
                 <p class>Ticketing Support</p>
             </div>
             <div class="col-12">

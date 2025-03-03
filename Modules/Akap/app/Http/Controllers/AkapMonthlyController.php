@@ -92,6 +92,7 @@ class AkapMonthlyController extends Controller
         $data['ticketing_support'] = $this->ticketingSupportChart($param);
         $data['daily_passengger'] = $this->dailyPassenggerChart($param);
         $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param);
+        $data['perbandingan_bulan_lalu'] = $this->perbandinganBulanLaluChart($param);
 
         //DATA
         $data['income'] = Number::currency(Akap::getIncome($param), 'IDR');
@@ -363,23 +364,143 @@ class AkapMonthlyController extends Controller
 
     public function dailyPassenggerChart($param)
     {
-        $daily_passengger = Akap::getDailyPassengger($param);
-        $keys = $daily_passengger->keys()->toArray();
-        $values = $daily_passengger->values()->toArray();
 
-        $data = Chartjs::build()
+        if ($param['trip_route_group'] == null) {
+            $daily_passengger = Akap::getDailyPassengger($param);
+            $keys = $daily_passengger->keys()->toArray();
+            $values = $daily_passengger->values()->toArray();
+    
+            $data = Chartjs::build()
+                ->name("DailyPassengger")
+                ->type("line")
+                ->size(["width" => 400, "height" => 150])
+                ->labels($keys)
+                ->datasets([
+                    [
+                        "label" => "Semua Rute",
+                        "data" => $values,
+                        'borderColor' => generateColor(1),
+                        'stack' => 'Stack 0',
+                        'fill' => false,
+                        'pointBorderWidth' => 4,
+                    ]
+                ]);
+        } else {
+            $name = $param['trip_route_grouped'][0]->name;
+            $trip_route_group = Akap::getTripRouteGroupByName($name);
+            $route_x = array();
+            $route_y = array();
+
+            $rx = explode(",", $trip_route_group[0]->route_x);
+            foreach ($rx as $val) {
+                array_push($route_x, $val);
+            }
+
+            $ry = explode(",", $trip_route_group[0]->route_y);
+            foreach ($ry as $val) {
+                array_push($route_y, $val);
+            }
+
+            $route_x_book = Akap::getDailyPassenggerByTrip($param, $route_x);
+            $route_y_book = Akap::getDailyPassenggerByTrip($param, $route_y);
+
+            $keys = $route_x_book->keys()->toArray();
+            $values_x = $route_x_book->values()->toArray();
+            $values_y = $route_y_book->values()->toArray();
+
+            $data = Chartjs::build()
             ->name("DailyPassengger")
-            ->type("bar")
+            ->type("line")
             ->size(["width" => 400, "height" => 150])
             ->labels($keys)
             ->datasets([
                 [
-                    "label" => "Penumpang",
-                    "data" => $values,
-                    'backgroundColor' => generateColor(1),
+                    "label" => $trip_route_group[0]->name_x,
+                    "data" => $values_x,
+                    'borderColor' => generateColor(1),
                     'stack' => 'Stack 0',
+                    'fill' => false,
+                    'pointBorderWidth' => 4,
+                ],
+                [
+                    "label" => $trip_route_group[0]->name_y,
+                    "data" => $values_y,
+                    'borderColor' => generateColor(6),
+                    'stack' => 'Stack 1',
+
+                    'fill' => false,
+                    'pointBorderWidth' => 4,
                 ]
             ]);
+        }
+
+        
+
+        return $data;
+    }
+
+    public function perbandinganBulanLaluChart($param)
+    {
+        $current_month = $param['month'];
+        $current_year = $param['year'];
+        $last_month = 0;
+        $last_year = 0;
+
+        if ($param['month'] == 1) {
+            $last_month = 12;
+            $last_year = $param['year'] - 1;
+        } else {
+            $last_month = $param['month'] - 1;
+            $last_year = $param['year'];
+        }
+
+        $current_month_book = Akap::getDailyPassengger($param);
+
+        $param['month'] = $last_month;
+        $param['year'] = $last_year;
+        $last_month_book = Akap::getDailyPassengger($param);
+
+
+        $keys = array();
+        $keys_a = $current_month_book->keys()->toArray();
+        $keys_b = $last_month_book->keys()->toArray();
+
+
+        if (count($keys_a) >= count($keys_b)) {
+            $keys = $keys_a;
+        } else {
+            $keys = $keys_b;
+
+        }
+
+        $values_current = $current_month_book->values()->toArray();
+        $values_last = $last_month_book->values()->toArray();
+
+        $data = Chartjs::build()
+            ->name("PerbandinganBulanLalu")
+            ->type("line")
+            ->size(["width" => 400, "height" => 150])
+            ->labels($keys)
+            ->datasets([
+                [
+                    "label" => "{$current_month} - {$current_year}",
+                    "data" => $values_current,
+                    'borderColor' => generateColor(1),
+                    'stack' => 'Stack 0',
+                    'fill' => false,
+                    'pointBorderWidth' => 4,
+                ],
+                [
+                    "label" => "{$last_month} - {$last_year}",
+                    "data" => $values_last,
+                    'borderColor' => generateColor(6),
+                    'stack' => 'Stack 1',
+
+                    'fill' => false,
+                    'pointBorderWidth' => 4,
+                ]
+            ]);
+
         return $data;
     }
 

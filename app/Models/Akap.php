@@ -19,6 +19,14 @@ class Akap extends Model
 
         return $query;
     }
+    public function scopeGetTripRouteGroupByName($query, $name)
+    {
+        $query = DB::table('trip_route_group');
+        $query = $query->where('name_x', $name);
+        $query = $query->select('*')->get();
+
+        return $query;
+    }
 
     public function scopeGetTripAssignGroup($query, $param)
     {
@@ -102,6 +110,22 @@ class Akap extends Model
         if (isset($param['trip_group'])) {
             $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
         }
+        $query = $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year'])
+            ->where('tb.tkt_refund_id', NULL)
+            ->groupBy(DB::raw('DAY(tb.booking_date)'))
+            ->select(
+                DB::raw('DAY(tb.booking_date) as date, SUM(tb.total_seat) AS seat')
+            )
+            ->pluck('seat', 'date');
+
+        return $query;
+    }
+
+    public function scopeGetDailyPassenggerByTrip($query, $param, $trip)
+    {
+        $query = DB::table('tkt_booking as tb');
+        $query = $query->whereIn('tb.trip_route_id', $trip);
         $query = $query->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year'])
             ->where('tb.tkt_refund_id', NULL)

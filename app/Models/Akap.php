@@ -259,7 +259,7 @@ class Akap extends Model
         $query = $query->where('tbh.payment_status', 1);
         $query = $query->whereMonth('tb.booking_date', $param['month']);
         $query = $query->whereYear('tb.booking_date', $param['year']);
-        $query = $query->groupBy('tb.fleet_type')
+        $query = $query->groupBy('ft.type')
             ->select(
                 DB::raw('ft.type, SUM(tb.total_seat) as passengger')
             )

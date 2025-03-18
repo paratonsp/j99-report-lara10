@@ -300,4 +300,19 @@ class Akap extends Model
 
         return $query;
     }
+
+    public function scopeGetTripAssignDetail($query, $id)
+    {
+        $query = DB::table('trip_assign as tras');
+        $query = $query->join('fleet_registration as fr', 'tras.fleet_registration_id', '=', 'fr.id');
+        $query = $query->join('trip as tr', 'tras.trip', '=', 'tr.trip_id');
+        $query = $query->where('tras.id', $id);
+        $query = $query->select(
+            'tr.trip_title as trip',
+            'fr.reg_no as bus',
+        );
+        $query = $query->get();
+
+        return $query;
+    }
 }

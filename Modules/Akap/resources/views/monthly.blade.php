@@ -140,9 +140,45 @@ $endYear = date('Y') + 1;
             </div>
         </div>
 
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p class>Occupancy Rate</p>
+            </div>
+            <div class="col-12">
+                <table id="occupacyRateTable" class="table table-bordered table-striped occupancyRateTable nowrap">
+                    <thead>
+                        <tr id="occupacyRateDate">
+                            <th rowspan="2" colspan="1">
+                                Armada
+                            </th>
+                            <th rowspan="2" colspan="1">
+                                Trip
+                            </th>
+                        </tr>
+                        <tr id="occupacyRateDetail"></tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($occupancy_rate as $key => $item)
+                        <tr>
+                            <td>{{ $item['bus'] }}</td>
+                            <td>{{ $item['trip'] }}</td>
+                            @foreach ($item['data'] as $key => $itemData)
+                            <td>{{ $itemData['occupancy'] }}</td>
+                            <td>{{ $itemData['seat_sale'] }}</td>
+                            <td>{{ $itemData['max_seat'] }}</td>
+                            @endforeach
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-md-6 col-12 mb-3">
-                <h3>Jadwal Buka Sementara</h3>
+                <div class="col-12 incomeSection">
+                    <p class>Jadwal Buka Sementara</p>
+                </div>
                 <table id="datatable" class="table table-bordered table-striped">
                     <thead>
                         <tr>
@@ -165,7 +201,9 @@ $endYear = date('Y') + 1;
                 </table>
             </div>
             <div class="col-md-6 col-12 mb-3">
-                <h3>Jadwal Tutup Sementara</h3>
+                <div class="col-12 incomeSection">
+                    <p class>Jadwal Tutup Sementara</p>
+                </div>
                 <table id="datatable" class="table table-bordered table-striped">
                     <thead>
                         <tr>
@@ -198,24 +236,24 @@ $endYear = date('Y') + 1;
 @section('script')
 <script type="text/javascript">
     $(document).ready(function() {
-        var currentDate = $('#yearPicker').find(':selected').val()
-        var currentDate = $('#monthPicker').find(':selected').val()
+        var currentYear = $('#yearPicker').find(':selected').val()
+        var currentMonth = $('#monthPicker').find(':selected').val()
         var currentTrip = $('#routeGroup').find(":selected").val();
 
         $('#yearPicker').change(function() {
-            currentDate = $(this).find(':selected').val()
+            currentYear = $(this).find(':selected').val()
             var currentUrl = location.href;
             var url = new URL(currentUrl);
-            url.searchParams.set("year", currentDate);
+            url.searchParams.set("year", currentYear);
             var newUrl = url.href;
             window.location.href = newUrl;
         });
 
         $('#monthPicker').change(function() {
-            currentDate = $(this).find(':selected').val()
+            currentMonth = $(this).find(':selected').val()
             var currentUrl = location.href;
             var url = new URL(currentUrl);
-            url.searchParams.set("month", currentDate);
+            url.searchParams.set("month", currentMonth);
             var newUrl = url.href;
             window.location.href = newUrl;
         });
@@ -232,6 +270,51 @@ $endYear = date('Y') + 1;
             }
             var newUrl = url.href;
             window.location.href = newUrl;
+        });
+
+        const getDays = (year, month) => new Date(year, month, 0).getDate()
+
+        const days = getDays(currentYear, currentMonth)
+        console.log(currentYear);
+        console.log(currentMonth);
+
+        var occupacyRateDate = "";
+        for (var j = 0; j < days; j++) {
+            var d = j + 1;
+            occupacyRateDate += '<th rowspan="1" colspan="3">' + d + '</th>';
+        }
+
+        var occupacyRateDetail = "";
+        for (var j = 0; j < days; j++) {
+            var d = j + 1;
+            occupacyRateDetail += '<th>% Occup</th>';
+            occupacyRateDetail += '<th>Ticket Sold</th>';
+            occupacyRateDetail += '<th>Max Seat</th>';
+        }
+
+        $("#occupacyRateDate").append(occupacyRateDate);
+        $("#occupacyRateDetail").append(occupacyRateDetail);
+
+        $('.occupancyRateTable').DataTable({
+            "scrollX": true,
+            "scrollY": '70vh',
+            "responsive": false,
+            "paging": false,
+            "ordering": false,
+            "searching": false,
+            "fixedColumns": {
+                "leftColumns": 2
+            },
+            "scrollCollapse": true,
+            "columnDefs": [{
+                    "className": "dt-center",
+                    "targets": "_all"
+                },
+                {
+                    "targets": 1,
+                    "width": 1
+                }
+            ],
         });
     });
 </script>

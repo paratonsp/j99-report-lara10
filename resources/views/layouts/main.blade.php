@@ -45,7 +45,7 @@
 
     <!-- Preloader -->
     <div class="preloader flex-column justify-content-center align-items-center">
-      <img class="animation__shake" src="{{asset('assets/images/logo/j99-logo-wide.png')}}" alt="J99 logo preloader">
+      <img class="animation__shake" src="{{asset('assets/images/logo/j99-favicon.png')}}" alt="J99 logo preloader" style="width: 10%">
     </div>
 
     <!-- Navbar -->

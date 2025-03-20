@@ -92,7 +92,14 @@ class AkapMonthlyController extends Controller
         $data['ticketing_support'] = $this->ticketingSupportChart($param);
         $data['daily_passengger'] = $this->dailyPassenggerChart($param);
         $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param);
-        $data['perbandingan_bulan_lalu'] = $this->perbandinganBulanLaluChart($param);
+        $data['perbandingan_bulan_lalu_chart'] = $this->perbandinganBulanLaluChart($param)['chart'];
+        $data['perbandingan_bulan_lalu_current_month'] = $this->perbandinganBulanLaluChart($param)['current_month'];
+        $data['perbandingan_bulan_lalu_last_month'] = $this->perbandinganBulanLaluChart($param)['last_month'];
+        $data['perbandingan_titik_naik_departure_bar_chart'] = $this->perbandinganTitikNaik($param)['departure_bar_chart'];
+        $data['perbandingan_titik_naik_arrival_bar_chart'] = $this->perbandinganTitikNaik($param)['arrival_bar_chart'];
+        $data['perbandingan_titik_naik_departure_doughnut_chart'] = $this->perbandinganTitikNaik($param)['departure_doughnut_chart'];
+        $data['perbandingan_titik_naik_arrival_doughnut_chart'] = $this->perbandinganTitikNaik($param)['arrival_doughnut_chart'];
+
 
         //DATA
         $data['income'] = Number::currency(Akap::getIncome($param), 'IDR');
@@ -416,10 +423,6 @@ class AkapMonthlyController extends Controller
             $data['doughnut_chart'][0]['chart'] = $this->nullChart('doughnut');
         }
 
-        // dd($data['doughnut_chart']);
-
-
-
         return $data;
     }
 
@@ -516,16 +519,25 @@ class AkapMonthlyController extends Controller
         }
 
         $current_month_book = Akap::getDailyPassengger($param);
+        $current_month_income = Akap::getDailyPassenggerIncome($param);
+
+        $data['current_month']['month'] = date("F", mktime(0, 0, 0, $param['month'], 10));
+        $data['current_month']['income'] = number_format($current_month_income[0]->price, 0, '.', ',');
+        $data['current_month']['seat'] = $current_month_income[0]->seat;
 
         $param['month'] = $last_month;
         $param['year'] = $last_year;
         $last_month_book = Akap::getDailyPassengger($param);
+        $last_month_income = Akap::getDailyPassenggerIncome($param);
+
+        $data['last_month']['month'] = date("F", mktime(0, 0, 0, $param['month'], 10));
+        $data['last_month']['income'] = number_format($last_month_income[0]->price, 0, '.', ',');
+        $data['last_month']['seat'] = $last_month_income[0]->seat;
 
 
         $keys = array();
         $keys_a = $current_month_book->keys()->toArray();
         $keys_b = $last_month_book->keys()->toArray();
-
 
         if (count($keys_a) >= count($keys_b)) {
             $keys = $keys_a;
@@ -536,7 +548,7 @@ class AkapMonthlyController extends Controller
         $values_current = $current_month_book->values()->toArray();
         $values_last = $last_month_book->values()->toArray();
 
-        $data = Chartjs::build()
+        $data['chart'] = Chartjs::build()
             ->name("PerbandinganBulanLalu")
             ->type("line")
             ->size(["width" => 400, "height" => 150])
@@ -590,9 +602,6 @@ class AkapMonthlyController extends Controller
     {
         $akap = Akap::getTicketingSupport($param);
 
-        // dd($akap);
-
-
         $onlineLabel = "Online";
         $onlineValue = 0;
 
@@ -623,7 +632,7 @@ class AkapMonthlyController extends Controller
         $data = Chartjs::build()
             ->name("TicketSupport")
             ->type("horizontalBar")
-            ->size(["width" => 400, "height" => 150])
+            ->size(["width" => 400, "height" => 100])
             ->labels($label)
             ->datasets([
                 [
@@ -637,6 +646,149 @@ class AkapMonthlyController extends Controller
                     'legend' => false
                 ]
             ]);
+
+        return $data;
+    }
+
+    public function perbandinganTitikNaik($param)
+    {
+        //DEPARTURE
+        $departure = Akap::getTicketDeparturePointGroup($param);
+
+        $total_departure = 0;
+        foreach ($departure as $value) {
+            $total_departure = $total_departure + $value;
+        }
+
+        $departureArr = array();
+
+        foreach ($departure as $key => $value) {
+            $departureArr[$key]['name'] = $key;
+            $departureArr[$key]['value'] = $value;
+            $percentage = ($value * 100 / $total_departure);
+            $departureArr[$key]['percentage'] = number_format($percentage, 2, '.', '');
+        }
+
+        $departure_label = array();
+        $departure_value = array();
+
+        foreach ($departureArr as $value) {
+            $departure_label[] = $value['name'];
+            $departure_value[] = $value['value'];
+        }
+
+        //ARRIVAL
+        $arrival = Akap::getTicketArrivalPointGroup($param);
+
+        $total_arrival = 0;
+        foreach ($arrival as $value) {
+            $total_arrival = $total_arrival + $value;
+        }
+
+        $arrivalArr = array();
+
+        foreach ($arrival as $key => $value) {
+            $arrivalArr[$key]['name'] = $key;
+            $arrivalArr[$key]['value'] = $value;
+            $percentage = ($value * 100 / $total_arrival);
+            $arrivalArr[$key]['percentage'] = number_format($percentage, 2, '.', '');
+        }
+
+        $arrival_label = array();
+        $arrival_value = array();
+
+        foreach ($arrivalArr as $value) {
+            $arrival_label[] = $value['name'];
+            $arrival_value[] = $value['value'];
+        }
+
+        //BAR CHART
+        $data['departure_bar_chart'] = Chartjs::build()
+            ->name("departureBarChart")
+            ->type("horizontalBar")
+            ->size(["width" => 400, "height" => 150])
+            ->labels($departure_label)
+            ->datasets([
+                [
+                    "label" => "Penumpang",
+                    "data" => $departure_value,
+                    'backgroundColor' => generateColor(1),
+                ]
+            ]);
+
+        $data['arrival_bar_chart'] = Chartjs::build()
+            ->name("arrivalBarChart")
+            ->type("horizontalBar")
+            ->size(["width" => 400, "height" => 150])
+            ->labels($arrival_label)
+            ->datasets([
+                [
+                    "label" => "Penumpang",
+                    "data" => $arrival_value,
+                    'backgroundColor' => generateColor(2),
+                ]
+            ]);
+
+        //DOUGHNUT CHART
+        if (count($departureArr) > 0) {
+            foreach ($departureArr as $key => $value) {
+                $percentage = $value['percentage'];
+                $label = $value['name'];
+                $class = str_replace(' ', '', $label);
+                $leftPassengger = $total_departure - $value['value'];
+                $data['departure_doughnut_chart'][$key]['percentage'] = "{$percentage}%";
+                $data['departure_doughnut_chart'][$key]['label'] = $label;
+                $data['departure_doughnut_chart'][$key]['chart'] = Chartjs::build()
+                    ->name("DepartureDoughnut{$class}")
+                    ->type("doughnut")
+                    ->size(["width" => 400, "height" => 150])
+                    ->labels(['Penumpang', ''])
+                    ->datasets([
+                        [
+                            'backgroundColor' => [generateColor(1), generateColor(0)],
+                            "data" => [$value['value'], $leftPassengger],
+                        ]
+                    ])->options([
+                        'plugins' => [
+                            'legend' => false
+                        ]
+                    ]);
+            }
+        } else {
+            $data['departure_doughnut_chart'][0]['percentage'] = "";
+            $data['departure_doughnut_chart'][0]['label'] = "";
+            $data['departure_doughnut_chart'][0]['chart'] = $this->nullChart('doughnut');
+        }
+
+        if (count($arrivalArr) > 0) {
+            foreach ($arrivalArr as $key => $value) {
+                $percentage = $value['percentage'];
+                $label = $value['name'];
+                $class = str_replace(' ', '', $label);
+                $leftPassengger = $total_departure - $value['value'];
+                $data['arrival_doughnut_chart'][$key]['percentage'] = "{$percentage}%";
+                $data['arrival_doughnut_chart'][$key]['label'] = $label;
+                $data['arrival_doughnut_chart'][$key]['chart'] = Chartjs::build()
+                    ->name("ArrivalDoughnut{$class}")
+                    ->type("doughnut")
+                    ->size(["width" => 400, "height" => 150])
+                    ->labels(['Penumpang', ''])
+                    ->datasets([
+                        [
+                            'backgroundColor' => [generateColor(2), generateColor(0)],
+                            "data" => [$value['value'], $leftPassengger],
+                        ]
+                    ])->options([
+                        'plugins' => [
+                            'legend' => false
+                        ]
+                    ]);
+            }
+        } else {
+            $data['arrival_doughnut_chart'][0]['percentage'] = "";
+            $data['arrival_doughnut_chart'][0]['label'] = "";
+            $data['arrival_doughnut_chart'][0]['chart'] = $this->nullChart('doughnut');
+        }
 
         return $data;
     }

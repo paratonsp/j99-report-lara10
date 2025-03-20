@@ -122,6 +122,61 @@ class Akap extends Model
         return $query;
     }
 
+    public function scopeGetDailyPassenggerIncome($query, $param)
+    {
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_group'])) {
+            $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
+        }
+        $query = $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year'])
+            ->where('tb.tkt_refund_id', NULL)
+            ->select(
+                DB::raw('SUM(tb.total_seat) AS seat, SUM(tb.price) AS price')
+            )
+            ->get();
+
+        return $query;
+    }
+
+    public function scopeGetTicketDeparturePointGroup($query, $param)
+    {
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_group'])) {
+            $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
+        }
+        $query = $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year'])
+            ->where('tb.tkt_refund_id', NULL)
+            ->groupBy(DB::raw('tb.pickup_trip_location'))
+            ->select(
+                DB::raw('SUM(tb.total_seat) AS seat, tb.pickup_trip_location as point')
+            )
+            ->orderBy('seat', 'DESC')
+            ->pluck('seat', 'point');
+
+        return $query;
+    }
+
+    public function scopeGetTicketArrivalPointGroup($query, $param)
+    {
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_group'])) {
+            $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
+        }
+        $query = $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year'])
+            ->where('tb.tkt_refund_id', NULL)
+            ->groupBy(DB::raw('tb.drop_trip_location'))
+            ->select(
+                DB::raw('SUM(tb.total_seat) AS seat, tb.drop_trip_location as point')
+            )
+            ->orderBy('seat', 'DESC')
+            ->pluck('seat', 'point');
+
+        return $query;
+    }
+
     public function scopeGetDailyPassenggerByTrip($query, $param, $trip)
     {
         $query = DB::table('tkt_booking as tb');

@@ -77,7 +77,7 @@ $endYear = date('Y') + 1;
 
         <div class="row mb-5">
             <div class="col-12 incomeSection">
-                <p class>Daily Passengger</p>
+                <p>Daily Passengger</p>
             </div>
             <div class="col-12">
                 <x-chartjs-component :chart="$daily_passengger" />
@@ -86,7 +86,7 @@ $endYear = date('Y') + 1;
 
         <div class="row mb-5" <?php if (isset($trip)) echo "hidden" ?>>
             <div class="col-12 incomeSection">
-                <p class>Occupancy By Route</p>
+                <p>Occupancy By Route</p>
             </div>
             <div class="col-12 mb-3">
                 <x-chartjs-component :chart="$occupancy_by_route_bar" />
@@ -105,7 +105,7 @@ $endYear = date('Y') + 1;
 
         <div class="row mb-5">
             <div class="col-12 incomeSection">
-                <p class>Occupancy By Class</p>
+                <p>Occupancy By Class</p>
             </div>
             <div class="col-12 mb-3">
                 <x-chartjs-component :chart="$occupancy_by_class_bar" />
@@ -124,25 +124,7 @@ $endYear = date('Y') + 1;
 
         <div class="row mb-5">
             <div class="col-12 incomeSection">
-                <p class>Perbandingan Bulan Lalu</p>
-            </div>
-            <div class="col-12">
-                <x-chartjs-component :chart="$perbandingan_bulan_lalu" />
-            </div>
-        </div>
-
-        <div class="row mb-5">
-            <div class="col-12 incomeSection">
-                <p class>Ticketing Support</p>
-            </div>
-            <div class="col-12">
-                <x-chartjs-component :chart="$ticketing_support" />
-            </div>
-        </div>
-
-        <div class="row mb-5">
-            <div class="col-12 incomeSection">
-                <p class>Occupancy Rate</p>
+                <p>Occupancy Rate</p>
             </div>
             <div class="col-12">
                 <table id="occupacyRateTable" class="table table-bordered table-striped occupancyRateTable nowrap">
@@ -174,10 +156,85 @@ $endYear = date('Y') + 1;
             </div>
         </div>
 
+        <div class="mb-5">
+            <div class="col-12 incomeSection">
+                <p>Perbandingan Titik Naik</p>
+            </div>
+            <div class="col-12 mt-3">
+                <p class="subtitle">Keberangkatan</p>
+            </div>
+            <div class="row col-12">
+                <div class="col-12 col-lg-6">
+                    <x-chartjs-component :chart="$perbandingan_titik_naik_departure_bar_chart" />
+                </div>
+                <div class="row col-12 col-lg-6 justify-content-center">
+                    @foreach ($perbandingan_titik_naik_departure_doughnut_chart as $key => $item)
+                    <div class="col-4 col-md-3 mb-3" style="justify-items: center;">
+                        <x-chartjs-component :chart="$item['chart']" />
+                        <p class="mb-0"><strong>{{$item['percentage']}}</strong></p>
+                        <p class="mb-0">{{$item['label']}}</p>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            <hr class="dashed">
+            <div class="col-12 mt-3">
+                <p class="subtitle">Kedatangan</p>
+            </div>
+            <div class=" row col-12">
+                <div class="col-12 col-lg-6">
+                    <x-chartjs-component :chart="$perbandingan_titik_naik_arrival_bar_chart" />
+                </div>
+                <div class="row col-12 col-lg-6 justify-content-center">
+                    @foreach ($perbandingan_titik_naik_arrival_doughnut_chart as $key => $item)
+                    <div class="col-4 col-md-3 mb-3" style="justify-items: center;">
+                        <x-chartjs-component :chart="$item['chart']" />
+                        <p class="mb-0"><strong>{{$item['percentage']}}</strong></p>
+                        <p class="mb-0">{{$item['label']}}</p>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Ticketing Support</p>
+            </div>
+            <div class="col-12">
+                <x-chartjs-component :chart="$ticketing_support" />
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Perbandingan Bulan Lalu</p>
+            </div>
+            <div class="col-12">
+                <x-chartjs-component :chart="$perbandingan_bulan_lalu_chart" />
+            </div>
+            <div class="row col-12 mt-3">
+                <div class="col-6">
+                    <p class="perbandingan-bulan-lalu">Total Keterisian Seat {{$perbandingan_bulan_lalu_last_month['month']}} : {{$perbandingan_bulan_lalu_last_month['seat']}}</p>
+                </div>
+                <div class="col-6">
+                    <p class="perbandingan-bulan-lalu">Total Pendapatan {{$perbandingan_bulan_lalu_last_month['month']}} : {{$perbandingan_bulan_lalu_last_month['income']}}</p>
+                </div>
+            </div>
+            <div class="row col-12 mt-3">
+                <div class="col-6">
+                    <p class="perbandingan-bulan-lalu">Total Keterisian Seat {{$perbandingan_bulan_lalu_current_month['month']}} : {{$perbandingan_bulan_lalu_current_month['seat']}}</p>
+                </div>
+                <div class="col-6">
+                    <p class="perbandingan-bulan-lalu">Total Pendapatan {{$perbandingan_bulan_lalu_current_month['month']}} : {{$perbandingan_bulan_lalu_current_month['income']}}</p>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-md-6 col-12 mb-3">
                 <div class="col-12 incomeSection">
-                    <p class>Jadwal Buka Sementara</p>
+                    <p>Jadwal Buka Sementara</p>
                 </div>
                 <table id="datatable" class="table table-bordered table-striped">
                     <thead>
@@ -202,7 +259,7 @@ $endYear = date('Y') + 1;
             </div>
             <div class="col-md-6 col-12 mb-3">
                 <div class="col-12 incomeSection">
-                    <p class>Jadwal Tutup Sementara</p>
+                    <p>Jadwal Tutup Sementara</p>
                 </div>
                 <table id="datatable" class="table table-bordered table-striped">
                     <thead>

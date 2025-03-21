@@ -105,6 +105,25 @@ $endYear = date('Y') + 1;
 
         <div class="row mb-5">
             <div class="col-12 incomeSection">
+                <p>Occupancy By Bus</p>
+            </div>
+            <div class="col-12 mb-3">
+                <x-chartjs-component :chart="$occupancy_by_bus_bar" />
+            </div>
+
+            <div class="row col-12 justify-content-center">
+                @foreach ($occupancy_by_bus_doughnut as $key => $item)
+                <div class="col-4 col-md-3 col-lg-2 mb-3" style="justify-items: center;">
+                    <x-chartjs-component :chart="$item['chart']" />
+                    <p class="mb-0"><strong>{{$item['percentage']}}</strong></p>
+                    <p class="mb-0">{{$item['label']}}</p>
+                </div>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
                 <p>Occupancy By Class</p>
             </div>
             <div class="col-12 mb-3">
@@ -126,8 +145,8 @@ $endYear = date('Y') + 1;
             <div class="col-12 incomeSection">
                 <p>Occupancy Rate</p>
             </div>
-            <div class="col-12">
-                <table id="occupacyRateTable" class="table table-bordered table-striped occupancyRateTable nowrap">
+            <div class="col-12 mt-2">
+                <table id="occupancyRateTable" class="table table-bordered table-striped occupancyRateTable nowrap">
                     <thead>
                         <tr id="occupacyRateDate">
                             <th rowspan="2" colspan="1">
@@ -137,7 +156,9 @@ $endYear = date('Y') + 1;
                                 Trip
                             </th>
                         </tr>
-                        <tr id="occupacyRateDetail"></tr>
+                        <tr id="occupacyRateDetail">
+
+                        </tr>
                     </thead>
                     <tbody>
                         @foreach ($occupancy_rate as $key => $item)
@@ -352,13 +373,13 @@ $endYear = date('Y') + 1;
         $("#occupacyRateDate").append(occupacyRateDate);
         $("#occupacyRateDetail").append(occupacyRateDetail);
 
-        $('.occupancyRateTable').DataTable({
+        $('#occupancyRateTable').DataTable({
             "scrollX": true,
             "scrollY": '70vh',
             "responsive": false,
             "paging": false,
-            "ordering": false,
-            "searching": false,
+            "ordering": true,
+            "searching": true,
             "fixedColumns": {
                 "leftColumns": 2
             },
@@ -372,7 +393,8 @@ $endYear = date('Y') + 1;
                     "width": 1
                 }
             ],
-        });
+            "buttons": ["copy", "csv", "excel", "pdf", "print"]
+        }).buttons().container().appendTo('#occupancyRateTable_wrapper .col-md-6:eq(0)');
     });
 </script>
 @endsection

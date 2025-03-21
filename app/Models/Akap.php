@@ -325,6 +325,32 @@ class Akap extends Model
         return $query;
     }
 
+    public function scopeGetBookByBus($query, $param)
+    {
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_assign_group'])) {
+            $query = $query->whereIn('tb.tras_id', $param['trip_assign_group']);
+        }
+        $query = $query->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code');
+        $query = $query->join('manifest as mn', 'tb.tras_id', '=', 'mn.trip_assign');
+
+        $query = $query->join('ops_roadwarrant as rw', 'mn.uuid', '=', 'rw.manifest_uuid');
+        $query = $query->join('v2_bus as bus', 'rw.bus_uuid', '=', 'bus.uuid');
+
+
+        $query = $query->where('mn.trip_date', DB::raw('DATE(tb.booking_date)'));
+        $query = $query->where('tbh.payment_status', 1);
+        $query = $query->whereMonth('tb.booking_date', $param['month']);
+        $query = $query->whereYear('tb.booking_date', $param['year']);
+        $query = $query->groupBy('bus.name')
+            ->select(
+                DB::raw('bus.name as name, tb.tras_id as tras_id, SUM(tb.total_seat) as passengger')
+            )
+            ->get();
+
+        return $query;
+    }
+
     public function scopeGetBookByTripAssign($query, $param)
     {
         $query = DB::table('tkt_booking as tb');

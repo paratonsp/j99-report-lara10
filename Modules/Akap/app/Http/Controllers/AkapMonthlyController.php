@@ -87,6 +87,10 @@ class AkapMonthlyController extends Controller
         //CHART DATA
         $data['occupancy_by_route_bar'] = $this->occupancyByRouteChart($param)['bar_chart'];
         $data['occupancy_by_route_doughnut'] = $this->occupancyByRouteChart($param)['doughnut_chart'];
+
+        $data['occupancy_by_bus_bar'] = $this->occupancyByBusChart($param)['bar_chart'];
+        $data['occupancy_by_bus_doughnut'] = $this->occupancyByBusChart($param)['doughnut_chart'];
+
         $data['occupancy_by_class_bar'] = $this->occupancyByClassChart($param)['bar_chart'];
         $data['occupancy_by_class_doughnut'] = $this->occupancyByClassChart($param)['doughnut_chart'];
         $data['ticketing_support'] = $this->ticketingSupportChart($param);
@@ -337,6 +341,101 @@ class AkapMonthlyController extends Controller
         // dd($tras_seat);
 
         $data = $tras_seat;
+
+        return $data;
+    }
+
+    public function occupancyByBusChart($param)
+    {
+        $class_info = $this->classInfo($param);
+
+        $book_seat = Akap::getBookByBus($param);
+
+        $tras_seat = array();
+
+        foreach ($class_info as $key => $value) {
+            if (array_key_exists($value->tras_id, $tras_seat)) {
+                $tras_seat[$value->tras_id]['max_seat'] = $tras_seat[$value->tras_id]['max_seat'] + $value->total_seat;
+            } else {
+                $tras_seat[$value->tras_id]['id'] = $value->tras_id;
+                $tras_seat[$value->tras_id]['max_seat'] = $value->total_seat;
+            }
+        }
+
+        $bus_seat = array();
+
+        foreach ($book_seat as $key => $value) {
+            $bus_seat[$value->tras_id]['name'] = $value->name;
+            $bus_seat[$value->tras_id]['tras_id'] = $value->tras_id;
+            $bus_seat[$value->tras_id]['passengger'] = $value->passengger;
+            $bus_seat[$value->tras_id]['max_seat'] = $tras_seat[$value->tras_id]['max_seat'];
+        }
+
+        $label = array();
+        $max_seat = array();
+        $seat = array();
+
+
+        foreach ($bus_seat as $value) {
+            array_push($label, $value['name']);
+            array_push($max_seat, $value['max_seat']);
+            array_push($seat, $value['passengger']);
+        }
+
+
+        $data['bar_chart'] = Chartjs::build()
+            ->name("OccupancyByBusBar")
+            ->type("bar")
+            ->size(["width" => 400, "height" => 150])
+            ->labels($label)
+            ->datasets([
+                [
+                    "label" => "Seat Max",
+                    "data" => $max_seat,
+                    'backgroundColor' => generateColor(0),
+                    'stack' => 'Stack 0',
+                ],
+                [
+                    "label" => "Seat Terjual",
+                    "data" => $seat,
+                    'backgroundColor' => generateColor(1),
+                    'stack' => 'Stack 1',
+                ]
+            ]);
+
+
+        if (count($bus_seat) > 0) {
+            foreach ($bus_seat as $key => $value) {
+                $leftSeat = $value['max_seat'] - $value['passengger'];
+                if ($leftSeat < 0) $leftSeat = 0;
+
+                $percentage = 0;
+                if ($value['max_seat'] != 0 && $value['passengger'] != 0) $percentage = ($value['passengger'] * 100 / $value['max_seat']);
+                $percentage = number_format($percentage, 2, '.', '');
+
+                $data['doughnut_chart'][$key]['percentage'] = "{$percentage}%";
+                $data['doughnut_chart'][$key]['label'] = $value['name'];
+                $data['doughnut_chart'][$key]['chart'] = Chartjs::build()
+                    ->name("OccupancyByBusDoughnut{$key}")
+                    ->type("doughnut")
+                    ->size(["width" => 400, "height" => 150])
+                    ->labels(['Seat Terjual', 'Sisa Seat'])
+                    ->datasets([
+                        [
+                            'backgroundColor' => [generateColor(1), generateColor(0)],
+                            "data" => [$value['passengger'], $leftSeat],
+                        ]
+                    ])->options([
+                        'plugins' => [
+                            'legend' => false
+                        ]
+                    ]);
+            }
+        } else {
+            $data['doughnut_chart'][0]['percentage'] = "";
+            $data['doughnut_chart'][0]['label'] = "";
+            $data['doughnut_chart'][0]['chart'] = $this->nullChart('doughnut');
+        }
 
         return $data;
     }

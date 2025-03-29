@@ -17,6 +17,9 @@ class AkapDailyController extends Controller
         $dateStart = ($request->has('dateStart')) ? $request->input('dateStart') : date('Y-m-d');
         $dateEnd = ($request->has('dateEnd')) ? $request->input('dateEnd') : date('Y-m-d');
 
+        $dateStart = date("Y-m-d 00:00:00", strtotime($dateStart));
+        $dateEnd = date("Y-m-d 23:59:59", strtotime($dateEnd));
+
         $daily_income = Akap::getDailyIncome($dateStart, $dateEnd);
 
         $trip_route_group = Akap::getTripRouteGroup();

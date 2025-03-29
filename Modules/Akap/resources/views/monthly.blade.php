@@ -102,7 +102,7 @@ $endYear = date('Y') + 1;
                 @endforeach
             </div>
         </div>
-
+        <?php /* 
         <div class="row mb-5">
             <div class="col-12 incomeSection">
                 <p>Occupancy By Bus</p>
@@ -121,6 +121,7 @@ $endYear = date('Y') + 1;
                 @endforeach
             </div>
         </div>
+        */ ?>
 
         <div class="row mb-5">
             <div class="col-12 incomeSection">

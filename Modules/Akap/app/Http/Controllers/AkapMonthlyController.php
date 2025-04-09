@@ -349,6 +349,8 @@ class AkapMonthlyController extends Controller
 
         $book_seat = Akap::getBookByBus($param);
 
+
+
         $tras_seat = array();
 
         foreach ($class_info as $key => $value) {

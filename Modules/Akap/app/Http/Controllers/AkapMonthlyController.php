@@ -87,8 +87,8 @@ class AkapMonthlyController extends Controller
         //CHART DATA
         $data['occupancy_by_route_bar'] = $this->occupancyByRouteChart($param)['bar_chart'];
         $data['occupancy_by_route_doughnut'] = $this->occupancyByRouteChart($param)['doughnut_chart'];
-        // $data['occupancy_by_bus_bar'] = $this->occupancyByBusChart($param)['bar_chart'];
-        // $data['occupancy_by_bus_doughnut'] = $this->occupancyByBusChart($param)['doughnut_chart'];
+        $data['occupancy_by_bus_bar'] = $this->occupancyByBusChart($param)['bar_chart'];
+        $data['occupancy_by_bus_doughnut'] = $this->occupancyByBusChart($param)['doughnut_chart'];
         $data['occupancy_by_class_bar'] = $this->occupancyByClassChart($param)['bar_chart'];
         $data['occupancy_by_class_doughnut'] = $this->occupancyByClassChart($param)['doughnut_chart'];
         $data['ticketing_support'] = $this->ticketingSupportChart($param);

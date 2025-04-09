@@ -349,27 +349,28 @@ class AkapMonthlyController extends Controller
 
         $book_seat = Akap::getBookByBus($param);
 
-
-
-        $tras_seat = array();
-
-        foreach ($class_info as $key => $value) {
-            if (array_key_exists($value->tras_id, $tras_seat)) {
-                $tras_seat[$value->tras_id]['max_seat'] = $tras_seat[$value->tras_id]['max_seat'] + $value->total_seat;
-            } else {
-                $tras_seat[$value->tras_id]['id'] = $value->tras_id;
-                $tras_seat[$value->tras_id]['max_seat'] = $value->total_seat;
+        foreach ($book_seat as $keyA => $valueA) {
+            $valueA->max_seat = 0;
+            foreach ($class_info as $keyB => $valueB) {
+                if ($valueA->tras_id == $valueB->tras_id) {
+                    $valueA->max_seat = $valueA->max_seat + $valueB->total_seat;
+                }
             }
         }
 
         $bus_seat = array();
 
         foreach ($book_seat as $key => $value) {
-            $bus_seat[$value->tras_id]['name'] = $value->name;
-            $bus_seat[$value->tras_id]['tras_id'] = $value->tras_id;
-            $bus_seat[$value->tras_id]['passengger'] = $value->passengger;
-            $bus_seat[$value->tras_id]['max_seat'] = $tras_seat[$value->tras_id]['max_seat'];
+            if (array_key_exists($value->name, $bus_seat)) {
+                $bus_seat[$value->name]['passengger'] = $bus_seat[$value->name]['passengger'] + $value->passengger;
+                $bus_seat[$value->name]['max_seat'] = $bus_seat[$value->name]['max_seat'] + $value->max_seat;
+            } else {
+                $bus_seat[$value->name]['name'] = $value->name;
+                $bus_seat[$value->name]['passengger'] = $value->passengger;
+                $bus_seat[$value->name]['max_seat'] = $value->max_seat;
+            }
         }
+
 
         $label = array();
         $max_seat = array();
@@ -412,11 +413,12 @@ class AkapMonthlyController extends Controller
                 $percentage = 0;
                 if ($value['max_seat'] != 0 && $value['passengger'] != 0) $percentage = ($value['passengger'] * 100 / $value['max_seat']);
                 $percentage = number_format($percentage, 2, '.', '');
-
+                $class = str_replace(' ', '', $key);
+                $class = preg_replace("/[^a-zA-Z]+/", "", $class);
                 $data['doughnut_chart'][$key]['percentage'] = "{$percentage}%";
                 $data['doughnut_chart'][$key]['label'] = $value['name'];
                 $data['doughnut_chart'][$key]['chart'] = Chartjs::build()
-                    ->name("OccupancyByBusDoughnut{$key}")
+                    ->name("OccupancyByBusDoughnut{$class}")
                     ->type("doughnut")
                     ->size(["width" => 400, "height" => 150])
                     ->labels(['Seat Terjual', 'Sisa Seat'])
@@ -497,11 +499,12 @@ class AkapMonthlyController extends Controller
                 $percentage = 0;
                 if ($value->max_seat != 0 && $value->passengger != 0) $percentage = ($value->passengger * 100 / $value->max_seat);
                 $percentage = number_format($percentage, 2, '.', '');
-
+                $class = str_replace(' ', '', $value->type);
+                $class = preg_replace("/[^a-zA-Z]+/", "", $class);
                 $data['doughnut_chart'][$key]['percentage'] = "{$percentage}%";
                 $data['doughnut_chart'][$key]['label'] = $value->type;
                 $data['doughnut_chart'][$key]['chart'] = Chartjs::build()
-                    ->name("OccupancyByRouteDoughnut{$key}")
+                    ->name("OccupancyByRouteDoughnut{$class}")
                     ->type("doughnut")
                     ->size(["width" => 400, "height" => 150])
                     ->labels(['Seat Terjual', 'Sisa Seat'])
@@ -805,7 +808,7 @@ class AkapMonthlyController extends Controller
         $data['departure_bar_chart'] = Chartjs::build()
             ->name("departureBarChart")
             ->type("horizontalBar")
-            ->size(["width" => 400, "height" => 150])
+            ->size(["width" => 400, "height" => 400])
             ->labels($departure_label)
             ->datasets([
                 [
@@ -818,7 +821,7 @@ class AkapMonthlyController extends Controller
         $data['arrival_bar_chart'] = Chartjs::build()
             ->name("arrivalBarChart")
             ->type("horizontalBar")
-            ->size(["width" => 400, "height" => 150])
+            ->size(["width" => 400, "height" => 400])
             ->labels($arrival_label)
             ->datasets([
                 [

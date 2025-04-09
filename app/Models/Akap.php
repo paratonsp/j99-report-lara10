@@ -327,40 +327,42 @@ class Akap extends Model
 
     public function scopeGetBookByBus($query, $param)
     {
-
         // Build the subquery
         $subQuery = DB::table('tkt_booking as tb')
             ->select(
-                'tb.tras_id',
+                'tb.tras_id as tras_id',
+                DB::raw('DATE(tb.booking_date) as date'),
                 DB::raw('SUM(tb.total_seat) as total_seat'),
-                'mn.uuid as manifest_uuid'
             )
             ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
-            ->join('manifest as mn', function ($join) {
-                $join->on('mn.trip_assign', '=', 'tb.tras_id')
-                    ->whereRaw('mn.trip_date = DATE(tb.booking_date)');
-            })
             ->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year'])
             ->where('tbh.payment_status', 1);
 
         if (isset($param['trip_assign_group'])) {
-            $subQuery->whereIn('tb.tras_id', $param['trip_assign_group']);
+            $subQuery = $subQuery->whereIn('tb.tras_id', $param['trip_assign_group']);
         }
 
-        $subQuery->groupBy('tb.tras_id', 'mn.uuid');
+        $subQuery = $subQuery->groupBy('tb.tras_id', DB::raw('DATE(tb.booking_date)'));
+
 
         // Use the subquery as a derived table
         $query = DB::table(DB::raw("({$subQuery->toSql()}) as x"))
             ->mergeBindings($subQuery) // important to include bindings!
-            ->join('ops_roadwarrant as rw', 'rw.manifest_uuid', '=', 'x.manifest_uuid')
+            ->join('manifest as mn', function ($join) {
+                $join->on('mn.trip_assign', '=', 'x.tras_id')
+                    ->whereRaw('mn.trip_date = DATE(x.date)');
+            })
+            ->join('ops_roadwarrant as rw', 'rw.manifest_uuid', '=', 'mn.uuid')
             ->join('v2_bus as bus', 'rw.bus_uuid', '=', 'bus.uuid')
             ->select(
                 DB::raw('bus.name as name'),
+                DB::raw('mn.uuid as uuid'),
+                DB::raw('x.date as date'),
                 DB::raw('x.tras_id as tras_id'),
                 DB::raw('SUM(x.total_seat) as passengger')
             )
-            ->groupBy('bus.name')
+            ->groupBy('bus.name', 'mn.uuid')
             ->get();
 
         return $query;

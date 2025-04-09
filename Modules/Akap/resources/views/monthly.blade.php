@@ -353,8 +353,6 @@ $endYear = date('Y') + 1;
         const getDays = (year, month) => new Date(year, month, 0).getDate()
 
         const days = getDays(currentYear, currentMonth)
-        console.log(currentYear);
-        console.log(currentMonth);
 
         var occupacyRateDate = "";
         for (var j = 0; j < days; j++) {

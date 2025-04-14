@@ -414,7 +414,7 @@ class AkapMonthlyController extends Controller
                 if ($value['max_seat'] != 0 && $value['passengger'] != 0) $percentage = ($value['passengger'] * 100 / $value['max_seat']);
                 $percentage = number_format($percentage, 2, '.', '');
                 $class = str_replace(' ', '', $key);
-                $class = preg_replace("-", "", $class);
+                $class = str_replace("-", "", $class);
                 $data['doughnut_chart'][$key]['percentage'] = "{$percentage}%";
                 $data['doughnut_chart'][$key]['label'] = $value['name'];
                 $data['doughnut_chart'][$key]['chart'] = Chartjs::build()
@@ -500,7 +500,7 @@ class AkapMonthlyController extends Controller
                 if ($value->max_seat != 0 && $value->passengger != 0) $percentage = ($value->passengger * 100 / $value->max_seat);
                 $percentage = number_format($percentage, 2, '.', '');
                 $class = str_replace(' ', '', $value->type);
-                $class = preg_replace("-", "", $class);
+                $class = str_replace("-", "", $class);
                 $data['doughnut_chart'][$key]['percentage'] = "{$percentage}%";
                 $data['doughnut_chart'][$key]['label'] = $value->type;
                 $data['doughnut_chart'][$key]['chart'] = Chartjs::build()

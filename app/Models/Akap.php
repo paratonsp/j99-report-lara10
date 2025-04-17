@@ -99,6 +99,8 @@ class Akap extends Model
         }
         $query = $query->whereMonth('tb.booking_date', $param['month']);
         $query = $query->whereYear('tb.booking_date', $param['year']);
+        $query = $query->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code');
+        $query = $query->where('tbh.payment_status', 1);
         $query = $query->sum('price');
 
         return $query;
@@ -112,7 +114,8 @@ class Akap extends Model
         }
         $query = $query->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year'])
-            ->where('tb.tkt_refund_id', NULL)
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
             ->groupBy(DB::raw('DAY(tb.booking_date)'))
             ->select(
                 DB::raw('DAY(tb.booking_date) as date, SUM(tb.total_seat) AS seat')
@@ -134,6 +137,8 @@ class Akap extends Model
             ->select(
                 DB::raw('SUM(tb.total_seat) AS seat, SUM(tb.price) AS price')
             )
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
             ->get();
 
         return $query;
@@ -147,8 +152,9 @@ class Akap extends Model
         }
         $query = $query->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year'])
-            ->where('tb.tkt_refund_id', NULL)
             ->groupBy(DB::raw('tb.pickup_trip_location'))
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
             ->select(
                 DB::raw('SUM(tb.total_seat) AS seat, tb.pickup_trip_location as point')
             )
@@ -166,8 +172,9 @@ class Akap extends Model
         }
         $query = $query->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year'])
-            ->where('tb.tkt_refund_id', NULL)
             ->groupBy(DB::raw('tb.drop_trip_location'))
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
             ->select(
                 DB::raw('SUM(tb.total_seat) AS seat, tb.drop_trip_location as point')
             )
@@ -183,7 +190,8 @@ class Akap extends Model
         $query = $query->whereIn('tb.trip_route_id', $trip);
         $query = $query->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year'])
-            ->where('tb.tkt_refund_id', NULL)
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
             ->groupBy(DB::raw('DAY(tb.booking_date)'))
             ->select(
                 DB::raw('DAY(tb.booking_date) as date, SUM(tb.total_seat) AS seat')
@@ -201,8 +209,8 @@ class Akap extends Model
         }
         $query = $query->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year'])
-            ->where('tb.tkt_refund_id', NULL)
             ->join('tkt_booking_head AS tbh', 'tbh.booking_code', '=', 'tb.booking_code')
+            ->where('tbh.payment_status', 1)
             ->select(
                 DB::raw('tbh.booker, tb.total_seat AS passengger')
             )
@@ -376,7 +384,8 @@ class Akap extends Model
         }
         $query = $query->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year'])
-            ->where('tb.tkt_refund_id', NULL)
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
             ->groupBy('tb.tras_id')
             ->groupBy(DB::raw('DAY(tb.booking_date)'))
             ->select(
@@ -396,6 +405,8 @@ class Akap extends Model
         $query = $query->select(
             DB::raw('tb.trip_route_id, SUM(tb.price) AS price')
         );
+        $query = $query->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code');
+        $query = $query->where('tbh.payment_status', 1);
         $query = $query->get();
 
         return $query;

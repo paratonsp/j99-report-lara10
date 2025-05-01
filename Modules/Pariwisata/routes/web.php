@@ -14,6 +14,6 @@ use Modules\Pariwisata\app\Http\Controllers\PariwisataController;
 |
 */
 
-Route::group([], function () {
+Route::middleware(['auth'])->group(function () {
     Route::resource('pariwisata', PariwisataController::class)->names('pariwisata');
 });

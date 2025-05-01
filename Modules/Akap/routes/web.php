@@ -15,7 +15,9 @@ use Modules\Akap\app\Http\Controllers\AkapDailyController;
 |
 */
 
-Route::prefix('akap')->group(function () {
-    Route::get('bulanan', [AkapMonthlyController::class, 'index']);
-    Route::get('harian', [AkapDailyController::class, 'index']);
+Route::middleware(['auth'])->group(function () {
+    Route::prefix('akap')->group(function () {
+        Route::get('bulanan', [AkapMonthlyController::class, 'index']);
+        Route::get('harian', [AkapDailyController::class, 'index']);
+    });
 });

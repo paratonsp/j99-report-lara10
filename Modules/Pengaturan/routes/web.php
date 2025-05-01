@@ -14,9 +14,16 @@ use Modules\Pengaturan\app\Http\Controllers\PengaturanController;
 |
 */
 
-Route::prefix('pengaturan')->group(function () {
-    Route::get('akap', [PengaturanController::class, 'akap']);
-    Route::post('akap', [PengaturanController::class, 'akapCreate']);
-    Route::patch('akap', [PengaturanController::class, 'akapUpdate']);
-    Route::get('pariwisata', [PengaturanController::class, 'pariwisata']);
+
+Route::middleware(['auth'])->group(function () {
+    Route::prefix('pengaturan')->group(function () {
+        Route::get('akap-trip', [PengaturanController::class, 'akapTrip']);
+        Route::post('akap-trip', [PengaturanController::class, 'akapTripCreate']);
+        Route::patch('akap-trip', [PengaturanController::class, 'akapTripUpdate']);
+        Route::get('akap-target', [PengaturanController::class, 'akapTarget']);
+        Route::post('akap-target', [PengaturanController::class, 'akapTargetCreate']);
+        Route::patch('akap-target', [PengaturanController::class, 'akapTargetUpdate']);
+        Route::delete('akap-target', [PengaturanController::class, 'akapTargetDelete']);
+        Route::get('pariwisata', [PengaturanController::class, 'pariwisata']);
+    });
 });

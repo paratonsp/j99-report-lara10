@@ -9,6 +9,15 @@ use Carbon\Carbon;
 class Akap extends Model
 {
 
+    public function scopeGetTarget($query, $param)
+    {
+        $query = DB::table('report_target_akap');
+        $query = $query->where('month', $param['month'])->where('year', $param['year']);;
+        $query = $query->select('*')->get();
+
+        return $query;
+    }
+
     public function scopeGetTripRouteGroup($query, $id = null)
     {
         $query = DB::table('trip_route_group');

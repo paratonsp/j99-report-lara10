@@ -39,4 +39,49 @@ class Pengaturan extends Model
 
         return $query;
     }
+
+    public function scopeGetAllAkapTarget($query)
+    {
+        $query = DB::table('report_target_akap')
+            ->select('*')
+            ->orderBy('year', 'DESC')
+            ->orderBy('month', 'DESC')
+            ->get();
+
+        return $query;
+    }
+
+    public function scopeCheckAkapTarget($query, $data)
+    {
+        $query = DB::table("report_target_akap")
+            ->where('month', $data['month'])
+            ->where('year', $data['year'])
+            ->select('*')
+            ->get();
+        return $query;
+    }
+
+    public function scopeCreateAkapTarget($query, $data)
+    {
+        $query = DB::table("report_target_akap")->insert($data);
+        return $query;
+    }
+
+    public function scopeUpdateAkapTarget($query, $data)
+    {
+        $query = DB::table("report_target_akap")
+            ->where('id', $data['id'])
+            ->update($data);
+
+        return $query;
+    }
+
+    public function scopeDeleteAkapTarget($query, $data)
+    {
+        $query = DB::table("report_target_akap")
+            ->where('id', $data['id'])
+            ->delete();
+
+        return $query;
+    }
 }

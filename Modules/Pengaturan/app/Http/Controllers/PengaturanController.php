@@ -10,7 +10,7 @@ use App\Models\Pengaturan;
 
 class PengaturanController extends Controller
 {
-    public function akap()
+    public function akapTrip()
     {
         $data['all_trip_route'] = Pengaturan::getAllTripRoute();
         $data['trip_route_group'] = Pengaturan::getTripRouteGroup();
@@ -31,11 +31,11 @@ class PengaturanController extends Controller
         // dd($data['selected_trip_route']);
 
 
-        $data['title'] = 'Pengaturan Akap';
-        return view('pengaturan::akap', $data);
+        $data['title'] = 'Pengaturan Akap Trip';
+        return view('pengaturan::akapTrip', $data);
     }
 
-    public function akapCreate(Request $request)
+    public function akapTripCreate(Request $request)
     {
         $request->validate([
             'name_x' => ['required'],
@@ -60,7 +60,7 @@ class PengaturanController extends Controller
 
 
 
-    public function akapUpdate(Request $request)
+    public function akapTripUpdate(Request $request)
     {
         $data = $request->input('data');
 
@@ -72,6 +72,78 @@ class PengaturanController extends Controller
         }
 
         return back()->with('success', 'Data berhasil diubah');
+    }
+
+    public function akapTarget()
+    {
+        $data['list_akap_target'] = Pengaturan::getAllAkapTarget();
+
+        $data['title'] = 'Pengaturan Target Akap';
+        return view('pengaturan::akapTarget', $data);
+    }
+
+    public function akapTargetCreate(Request $request)
+    {
+        $request->validate([
+            'month' => ['required'],
+            'year' => ['required'],
+            'target' => ['required'],
+        ]);
+
+        $data = [
+            'month' => $request->input('month'),
+            'year' => $request->input('year'),
+            'target' => $request->input('target'),
+        ];
+
+        $check = Pengaturan::checkAkapTarget($data);
+
+        if ($check->isEmpty()) {
+            $response = Pengaturan::createAkapTarget($data);
+        } else {
+            return back()->with('failed', 'Data gagal dibuat, target sudah ada.');
+        }
+
+        if ($response) {
+            return back()->with('success', 'Data berhasil dibuat');
+        }
+
+        return back()->with('failed', 'Data gagal dibuat');
+    }
+
+    public function akapTargetUpdate(Request $request)
+    {
+        $request->validate([
+            'target' => ['required'],
+        ]);
+
+        $data = [
+            'id' => $request->input('id'),
+            'target' => $request->input('target'),
+        ];
+
+        $response = Pengaturan::updateAkapTarget($data);
+
+        if ($response) {
+            return back()->with('success', 'Data berhasil diperbarui');
+        }
+
+        return back()->with('failed', 'Data gagal diperbarui');
+    }
+
+    public function akapTargetDelete(Request $request)
+    {
+        $data = [
+            'id' => $request->input('id'),
+        ];
+
+        $response = Pengaturan::deleteAkapTarget($data);
+
+        if ($response) {
+            return back()->with('success', 'Data berhasil dihapus');
+        }
+
+        return back()->with('failed', 'Data gagal dihapus');
     }
 
     public function pariwisata()

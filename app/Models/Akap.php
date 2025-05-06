@@ -66,6 +66,7 @@ class Akap extends Model
             $query = $query->whereIn('assign_id', $param['trip_assign_group']);
         }
         $query = $query->whereMonth('date', $param['month'])
+            ->whereYear('date', $param['year'])
             ->select('*')->get();
 
         return $query;
@@ -78,6 +79,7 @@ class Akap extends Model
             $query = $query->whereIn('assign_id', $param['assign_id']);
         }
         $query = $query->whereMonth('date', $param['month'])
+            ->whereYear('date', $param['year'])
             ->select('*')->get();
 
         return $query;

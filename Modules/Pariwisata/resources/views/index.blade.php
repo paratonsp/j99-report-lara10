@@ -45,6 +45,8 @@ $endYear = date('Y') + 1;
             <div class="col-12 incomeSection mb-5 mt-3">
                 <p>Total Pendapatan:</p>
                 <p><strong>{{ $monthly_income }}</strong></p>
+                <br>
+                <p style="font-size: 1em;">Target: <strong>{{ $target }}</strong></p>
             </div>
         </div>
 

@@ -26,6 +26,13 @@ class PariwisataController extends Controller
             'year' => $year,
         ];
 
+        $target = Pariwisata::getTarget($param);
+        if ($target->isEmpty()) {
+            $target = "Target belum disetting";
+        } else {
+            $target = Number::currency($target[0]->target, 'IDR');
+        }
+
         $data['monthly_income'] = Number::currency($this->incomeMonthly($param), 'IDR');
         $data['penjualan_by_kota_departure_bar_chart'] = $this->penjualanBerdasarkanKota($param)['departure_bar_chart'];
         $data['penjualan_by_kota_arrival_bar_chart'] = $this->penjualanBerdasarkanKota($param)['arrival_bar_chart'];
@@ -36,7 +43,7 @@ class PariwisataController extends Controller
         $data['penjualan_by_unit_bar_chart'] = $this->penjualanBerdasarkanUnit($param)['bar_chart'];
         $data['penjualan_by_unit_pie_chart'] = $this->penjualanBerdasarkanUnit($param)['pie_chart'];
 
-
+        $data['target'] = $target;
         $data['title'] = 'REPORT PARIWISATA';
         return view('pariwisata::index', $data);
     }

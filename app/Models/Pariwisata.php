@@ -9,6 +9,15 @@ use Carbon\Carbon;
 class Pariwisata extends Model
 {
 
+    public function scopeGetTarget($query, $param)
+    {
+        $query = DB::table('report_target_akap');
+        $query = $query->where('month', $param['month'])->where('year', $param['year']);;
+        $query = $query->select('*')->get();
+
+        return $query;
+    }
+
     public function scopeGetIncomeMonthly($query, $param)
     {
         $query = DB::table('v2_book as book');

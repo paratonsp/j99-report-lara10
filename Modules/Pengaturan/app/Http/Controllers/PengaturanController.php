@@ -151,4 +151,76 @@ class PengaturanController extends Controller
         $data['title'] = 'Pengaturan Pariwisata';
         return view('pengaturan::pariwisata', $data);
     }
+
+    public function pariwisataTarget()
+    {
+        $data['list_pariwisata_target'] = Pengaturan::getAllPariwisataTarget();
+
+        $data['title'] = 'Pengaturan Target Pariwisata';
+        return view('pengaturan::pariwisataTarget', $data);
+    }
+
+    public function pariwisataTargetCreate(Request $request)
+    {
+        $request->validate([
+            'month' => ['required'],
+            'year' => ['required'],
+            'target' => ['required'],
+        ]);
+
+        $data = [
+            'month' => $request->input('month'),
+            'year' => $request->input('year'),
+            'target' => $request->input('target'),
+        ];
+
+        $check = Pengaturan::checkPariwisataTarget($data);
+
+        if ($check->isEmpty()) {
+            $response = Pengaturan::createPariwisataTarget($data);
+        } else {
+            return back()->with('failed', 'Data gagal dibuat, target sudah ada.');
+        }
+
+        if ($response) {
+            return back()->with('success', 'Data berhasil dibuat');
+        }
+
+        return back()->with('failed', 'Data gagal dibuat');
+    }
+
+    public function pariwisataTargetUpdate(Request $request)
+    {
+        $request->validate([
+            'target' => ['required'],
+        ]);
+
+        $data = [
+            'id' => $request->input('id'),
+            'target' => $request->input('target'),
+        ];
+
+        $response = Pengaturan::updatePariwisataTarget($data);
+
+        if ($response) {
+            return back()->with('success', 'Data berhasil diperbarui');
+        }
+
+        return back()->with('failed', 'Data gagal diperbarui');
+    }
+
+    public function pariwisataTargetDelete(Request $request)
+    {
+        $data = [
+            'id' => $request->input('id'),
+        ];
+
+        $response = Pengaturan::deletePariwisataTarget($data);
+
+        if ($response) {
+            return back()->with('success', 'Data berhasil dihapus');
+        }
+
+        return back()->with('failed', 'Data gagal dihapus');
+    }
 }

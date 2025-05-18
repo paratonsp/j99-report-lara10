@@ -724,12 +724,25 @@ class AkapMonthlyController extends Controller
         $kpLabel = "KP";
         $kpValue = 0;
 
-        $listAgen = array('no-reply@traveloka.com', 'ybc@gmail.com');
+        $listAgen = array('ybc@gmail.com', 'no-reply@traveloka.com');
+        $redbusAgen = 'ybc@gmail.com';
+        $redbusLabel = 'RedBus';
+        $redbusValue = 0;
+
+        $travelokaAgen = 'no-reply@traveloka.com';
+        $travelokaLabel = 'Traveloka';
+        $travelokaValue = 0;
+
 
 
         foreach ($akap as $value) {
             if (in_array($value->booker, $listAgen)) {
-                $agenValue = $agenValue + $value->passengger;
+                if ($value->booker == $redbusAgen) {
+                    $redbusValue = $redbusValue + $value->passengger;
+                }
+                if ($value->booker == $travelokaAgen) {
+                    $travelokaValue = $travelokaValue + $value->passengger;
+                }
             } else {
                 if (strstr(strtolower($value->booker), 'kantorperwakilan')) {
                     $kpValue = $kpValue + $value->passengger;
@@ -739,9 +752,9 @@ class AkapMonthlyController extends Controller
             }
         }
 
-        $label = array($onlineLabel, $agenLabel, $kpLabel);
-        $value = array($onlineValue, $agenValue, $kpValue);
-        $color = array(generateColor(0), generateColor(1), generateColor(2));
+        $label = array($onlineLabel, $redbusLabel, $travelokaLabel, $kpLabel);
+        $value = array($onlineValue, $redbusValue, $travelokaValue, $kpValue);
+        $color = array(generateColor(0), generateColor(1), generateColor(2), generateColor(2));
         $data['bar_chart'] = Chartjs::build()
             ->name("TicketSupport")
             ->type("horizontalBar")
@@ -760,7 +773,7 @@ class AkapMonthlyController extends Controller
                 ]
             ]);
 
-        $totalValue = $onlineValue + $agenValue + $kpValue;
+        $totalValue = $onlineValue + $redbusValue + $travelokaValue + $kpValue;
 
         foreach ($label as $key => $x) {
             $leftValue = $totalValue - $value[$key];

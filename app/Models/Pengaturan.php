@@ -84,4 +84,51 @@ class Pengaturan extends Model
 
         return $query;
     }
+
+    // 
+
+    public function scopeGetAllPariwisataTarget($query)
+    {
+        $query = DB::table('report_target_pariwisata')
+            ->select('*')
+            ->orderBy('year', 'DESC')
+            ->orderBy('month', 'DESC')
+            ->get();
+
+        return $query;
+    }
+
+    public function scopeCheckPariwisataTarget($query, $data)
+    {
+        $query = DB::table("report_target_pariwisata")
+            ->where('month', $data['month'])
+            ->where('year', $data['year'])
+            ->select('*')
+            ->get();
+        return $query;
+    }
+
+    public function scopeCreatePariwisataTarget($query, $data)
+    {
+        $query = DB::table("report_target_pariwisata")->insert($data);
+        return $query;
+    }
+
+    public function scopeUpdatePariwisataTarget($query, $data)
+    {
+        $query = DB::table("report_target_pariwisata")
+            ->where('id', $data['id'])
+            ->update($data);
+
+        return $query;
+    }
+
+    public function scopeDeletePariwisataTarget($query, $data)
+    {
+        $query = DB::table("report_target_pariwisata")
+            ->where('id', $data['id'])
+            ->delete();
+
+        return $query;
+    }
 }

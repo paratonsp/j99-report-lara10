@@ -25,5 +25,9 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('akap-target', [PengaturanController::class, 'akapTargetUpdate']);
         Route::delete('akap-target', [PengaturanController::class, 'akapTargetDelete']);
         Route::get('pariwisata', [PengaturanController::class, 'pariwisata']);
+        Route::get('pariwisata-target', [PengaturanController::class, 'pariwisataTarget']);
+        Route::post('pariwisata-target', [PengaturanController::class, 'pariwisataTargetCreate']);
+        Route::patch('pariwisata-target', [PengaturanController::class, 'pariwisataTargetUpdate']);
+        Route::delete('pariwisata-target', [PengaturanController::class, 'pariwisataTargetDelete']);
     });
 });

@@ -61,26 +61,32 @@ class Akap extends Model
 
     public function scopeGetTripAssignOpen($query, $param)
     {
-        $query = DB::table('trip_assign_temporary');
+        $query = DB::table('trip_assign_temporary as tat');
         if (isset($param['trip_assign_group'])) {
-            $query = $query->whereIn('assign_id', $param['trip_assign_group']);
+            $query = $query->whereIn('tat.assign_id', $param['trip_assign_group']);
         }
-        $query = $query->whereMonth('date', $param['month'])
-            ->whereYear('date', $param['year'])
-            ->select('*')->get();
+        $query = $query
+            ->join('trip_assign as tras', 'tras.id', '=', 'tat.assign_id')
+            ->join('fleet_registration as fr', 'fr.id', '=', 'tras.fleet_registration_id')
+            ->whereMonth('tat.date', $param['month'])
+            ->whereYear('tat.date', $param['year'])
+            ->select('tat.*', 'fr.reg_no')->get();
 
         return $query;
     }
 
     public function scopeGetTripAssignClose($query, $param)
     {
-        $query = DB::table('trip_assign_dayoff');
+        $query = DB::table('trip_assign_dayoff as tad');
         if (isset($param['assign_id'])) {
             $query = $query->whereIn('assign_id', $param['assign_id']);
         }
-        $query = $query->whereMonth('date', $param['month'])
-            ->whereYear('date', $param['year'])
-            ->select('*')->get();
+        $query = $query
+            ->join('trip_assign as tras', 'tras.id', '=', 'tad.assign_id')
+            ->join('fleet_registration as fr', 'fr.id', '=', 'tras.fleet_registration_id')
+            ->whereMonth('tad.date', $param['month'])
+            ->whereYear('tad.date', $param['year'])
+            ->select('tad.*', 'fr.reg_no')->get();
 
         return $query;
     }

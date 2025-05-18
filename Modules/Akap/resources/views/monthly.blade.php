@@ -230,7 +230,7 @@ $endYear = date('Y') + 1;
 
             <div class="row col-12 justify-content-center">
                 @foreach ($ticketing_support_doughnut as $key => $item)
-                <div class="col-4" style="justify-items: center;">
+                <div class="col-3" style="justify-items: center;">
                     <x-chartjs-component :chart="$item['chart']" />
                     <p class="mb-0"><strong>{{$item['percentage']}}</strong></p>
                     <p class="mb-0">{{$item['label']}}</p>
@@ -273,6 +273,7 @@ $endYear = date('Y') + 1;
                     <thead>
                         <tr>
                             <th>No</th>
+                            <th>Trip</th>
                             <th>Kendala</th>
                             <th>Awal</th>
                             <th>Akhir</th>
@@ -282,6 +283,7 @@ $endYear = date('Y') + 1;
                         @foreach ($trip_assign_open as $key => $item)
                         <tr>
                             <td width="20" class="text-center">{{ intval($key) + 1 }}</td>
+                            <td>{{ $item->reg_no }}</td>
                             <td>{{ $item->causes }}</td>
                             <td>{{ $item->date }}</td>
                             <td>{{ $item->date_finish }}</td>
@@ -298,6 +300,7 @@ $endYear = date('Y') + 1;
                     <thead>
                         <tr>
                             <th>No</th>
+                            <th>Trip</th>
                             <th>Kendala</th>
                             <th>Awal</th>
                             <th>Akhir</th>
@@ -307,6 +310,7 @@ $endYear = date('Y') + 1;
                         @foreach ($trip_assign_close as $key => $item)
                         <tr>
                             <td width="20" class="text-center">{{ intval($key) + 1 }}</td>
+                            <td>{{ $item->reg_no }}</td>
                             <td>{{ $item->causes }}</td>
                             <td>{{ $item->date }}</td>
                             <td>{{ $item->date_finish }}</td>

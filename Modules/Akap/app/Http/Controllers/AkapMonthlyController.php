@@ -8,6 +8,8 @@ use App\Models\Akap;
 use Illuminate\Support\Number;
 use IcehouseVentures\LaravelChartjs\Facades\Chartjs;
 use DateTime;
+use DateInterval;
+use DatePeriod;
 use Helper;
 use Carbon\Carbon;
 
@@ -86,6 +88,8 @@ class AkapMonthlyController extends Controller
             $target = Number::currency($target[0]->target, 'IDR');
         }
 
+        $classInfo = $this->classInfo($param);
+
         $param['trip_group'] = Akap::getTripGroup($param)->toArray();
         $param['trip_group'] = join(',', array_column($param['trip_group'], 'trip_id'));
         $param['trip_group'] = explode(",", $param['trip_group']);
@@ -94,16 +98,16 @@ class AkapMonthlyController extends Controller
         $param['trip_assign_group'] = explode(",", $param['trip_assign_group']);
 
         //CHART DATA
-        $data['occupancy_by_route_bar'] = $this->occupancyByRouteChart($param)['bar_chart'];
-        $data['occupancy_by_route_doughnut'] = $this->occupancyByRouteChart($param)['doughnut_chart'];
-        $data['occupancy_by_bus_bar'] = $this->occupancyByBusChart($param)['bar_chart'];
-        $data['occupancy_by_bus_doughnut'] = $this->occupancyByBusChart($param)['doughnut_chart'];
-        $data['occupancy_by_class_bar'] = $this->occupancyByClassChart($param)['bar_chart'];
-        $data['occupancy_by_class_doughnut'] = $this->occupancyByClassChart($param)['doughnut_chart'];
+        $data['occupancy_by_route_bar'] = $this->occupancyByRouteChart($param,$classInfo)['bar_chart'];
+        $data['occupancy_by_route_doughnut'] = $this->occupancyByRouteChart($param,$classInfo)['doughnut_chart'];
+        $data['occupancy_by_bus_bar'] = $this->occupancyByBusChart($param,$classInfo)['bar_chart'];
+        $data['occupancy_by_bus_doughnut'] = $this->occupancyByBusChart($param,$classInfo)['doughnut_chart'];
+        $data['occupancy_by_class_bar'] = $this->occupancyByClassChart($param,$classInfo)['bar_chart'];
+        $data['occupancy_by_class_doughnut'] = $this->occupancyByClassChart($param,$classInfo)['doughnut_chart'];
         $data['ticketing_support_bar'] = $this->ticketingSupportChart($param)['bar_chart'];
         $data['ticketing_support_doughnut'] = $this->ticketingSupportChart($param)['doughnut_chart'];
         $data['daily_passengger'] = $this->dailyPassenggerChart($param);
-        $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param);
+        $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param,$classInfo);
         $data['perbandingan_bulan_lalu_chart'] = $this->perbandinganBulanLaluChart($param)['chart'];
         $data['perbandingan_bulan_lalu_current_month'] = $this->perbandinganBulanLaluChart($param)['current_month'];
         $data['perbandingan_bulan_lalu_last_month'] = $this->perbandinganBulanLaluChart($param)['last_month'];
@@ -151,10 +155,10 @@ class AkapMonthlyController extends Controller
         return $data;
     }
 
-    public function totalKeterisianKursiChart($param)
+    public function totalKeterisianKursiChart($param, $classInfo)
     {
 
-        $class_info = $this->classInfo($param);
+        $class_info = $classInfo;
         $book_seat = Akap::getBookSeat($param);
 
         $bookedSeat = 0;
@@ -204,9 +208,9 @@ class AkapMonthlyController extends Controller
         return $data;
     }
 
-    public function occupancyByRouteChart($param)
+    public function occupancyByRouteChart($param, $classInfo)
     {
-        $class_info = $this->classInfo($param);
+        $class_info = $classInfo;
         $book_seat = Akap::getBookSeat($param);
 
         foreach ($param['trip_route_grouped'] as $value) {
@@ -289,10 +293,6 @@ class AkapMonthlyController extends Controller
             $data['doughnut_chart'][0]['chart'] = $this->nullChart('doughnut');
         }
 
-        // dd($data['doughnut_chart']);
-
-
-
         return $data;
     }
 
@@ -311,6 +311,8 @@ class AkapMonthlyController extends Controller
                 $tras_detail = Akap::getTripAssignDetail($value->tras_id);
                 $tras_seat[$value->tras_id]['trip'] = $tras_detail[0]->trip;
                 $tras_seat[$value->tras_id]['bus'] = $tras_detail[0]->bus;
+                $tras_seat[$value->tras_id]['fleet_reg_id'] = $value->fleet_registration_id;
+                $tras_seat[$value->tras_id]['status'] = $value->status;
             }
         }
 
@@ -328,6 +330,33 @@ class AkapMonthlyController extends Controller
             }
         }
 
+        $busOff = Akap::getTemporaryOff($param);
+        $busOn = Akap::getTemporaryOn($param);
+
+        foreach ($busOff as $value) {
+            $start = new DateTime($value->date);
+            $end = new DateTime($value->date_finish);
+            $end->modify('+1 day');
+            $period = new DatePeriod($start,new DateInterval('P1D'),$end);
+            $dates = [];
+            foreach ($period as $valueX) {
+                    $dates[] = $valueX->format('j');
+            }
+            $value->days = $dates;
+        }
+
+        foreach ($busOn as $value) {
+            $start = new DateTime($value->date);
+            $end = new DateTime($value->date_finish);
+            $end->modify('+1 day');
+            $period = new DatePeriod($start,new DateInterval('P1D'),$end);
+            $dates = [];
+            foreach ($period as $valueX) {
+                $dates[] = $valueX->format('j');
+            }
+            $value->days = $dates;
+        }
+
         $book_seat = Akap::getBookByTripAssign($param);
         foreach ($book_seat as $value) {
             if ($value->seat > 0) {
@@ -335,9 +364,36 @@ class AkapMonthlyController extends Controller
                     if ($valueA['id'] == $value->tras_id) {
                         foreach ($valueA['data'] as $keyB => $valueB) {
                             if ($valueB['date'] == $value->date) {
-                                $tras_seat[$keyA]['data'][$keyB]['max_seat'] = $valueA['max_seat'];
+
+                                if ($valueA['status'] = 1) {
+                                    $tras_seat[$keyA]['data'][$keyB]['max_seat'] = $valueA['max_seat'];
+                                    foreach ($busOff as $valueC) {
+                                        if ($valueC->fleet_registration_id == $valueA['fleet_reg_id']){
+                                            if (in_array($valueB['date'], $valueC->days)) {
+                                                $tras_seat[$keyA]['data'][$keyB]['max_seat'] = 0;
+                                            } 
+                                        }
+                                    }
+                                }
+
+                                if ($valueA['status'] = 0) {
+                                    $tras_seat[$keyA]['data'][$keyB]['max_seat'] = 0;
+                                    foreach ($busOn as $valueC) {
+                                        if ($valueC->fleet_registration_id == $valueA['fleet_reg_id']){
+                                            if (in_array($valueB['date'], $valueC->days)) {
+                                                $tras_seat[$keyA]['data'][$keyB]['max_seat'] = $valueA['max_seat'];
+                                            } 
+                                        }
+                                    }
+                                }
+
                                 $tras_seat[$keyA]['data'][$keyB]['seat_sale'] = $value->seat;
-                                $occup = ($tras_seat[$keyA]['data'][$keyB]['seat_sale'] / $tras_seat[$keyA]['data'][$keyB]['max_seat']) * 100;
+                                if ($tras_seat[$keyA]['data'][$keyB]['max_seat'] == 0) {
+                                    $occup = 0;
+                                } else {
+                                    $occup = ($tras_seat[$keyA]['data'][$keyB]['seat_sale'] / $tras_seat[$keyA]['data'][$keyB]['max_seat']) * 100;
+                                }
+                                
                                 $occupformat = number_format($occup, 0, ',', ' ');
                                 $tras_seat[$keyA]['data'][$keyB]['occupancy'] = $occupformat . "%";
                             }
@@ -349,14 +405,13 @@ class AkapMonthlyController extends Controller
 
         // dd($tras_seat);
 
-        $data = $tras_seat;
 
-        return $data;
+        return $tras_seat;
     }
 
-    public function occupancyByBusChart($param)
+    public function occupancyByBusChart($param, $classInfo)
     {
-        $class_info = $this->classInfo($param);
+        $class_info = $classInfo;
 
         $book_seat = Akap::getBookByBus($param);
 
@@ -453,9 +508,9 @@ class AkapMonthlyController extends Controller
         return $data;
     }
 
-    public function occupancyByClassChart($param)
+    public function occupancyByClassChart($param, $classInfo)
     {
-        $class_info = $this->classInfo($param);
+        $class_info = $classInfo;
         $book_seat = Akap::getBookByClass($param);
 
 
@@ -949,33 +1004,68 @@ class AkapMonthlyController extends Controller
 
     public function classInfo($param)
     {
-
         $classInfo = Akap::getAkapClassInfoList($param);
 
+        $totalDays = Carbon::now()->month($param['month'])->daysInMonth;
 
         foreach ($classInfo as $value) {
-            $value->days_active = 0;
+            if ($value->status == 1) {
+                $value->days_active = $totalDays;
+            } else {
+                $value->days_active = 0;
+            }
         }
 
-        $temp_assign = array();
+        // REFERENCE BY TEMPORARY ON & OFF
 
-        $book_seat = Akap::getBookByTripAssign($param);
-        foreach ($book_seat as $value) {
-            if ($value->seat > 0) {
-                if (isset($temp_assign[$value->tras_id])) {
-                    $temp_assign[$value->tras_id] = $temp_assign[$value->tras_id] + 1;
-                } else {
-                    $temp_assign[$value->tras_id] = 1;
+        $busOff = Akap::getTemporaryOff($param);
+        $busOn = Akap::getTemporaryOn($param);
+
+        foreach ($busOff as $value) {
+            $dateFrom=Carbon::parse($value->date);
+            $dateTo=Carbon::parse($value->date_finish);
+            $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
+
+            foreach ($classInfo as $valueX) {
+                if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
+                    $valueX->days_active = $valueX->days_active - $value->count_days;
                 }
             }
         }
 
-        foreach ($classInfo as $value) {
-            if (isset($temp_assign[$value->tras_id])) {
-                $value->days_active = $temp_assign[$value->tras_id];
+        foreach ($busOn as $value) {
+            $dateFrom=Carbon::parse($value->date);
+            $dateTo=Carbon::parse($value->date_finish);
+            $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
+
+            foreach ($classInfo as $valueX) {
+                if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
+                    $valueX->days_active = $valueX->days_active + $value->count_days;
+                }
             }
         }
 
+        
+        // REFERENCE BY BOOK
+
+        // $temp_assign = array();
+
+        // $book_seat = Akap::getBookByTripAssign($param);
+        // foreach ($book_seat as $value) {
+        //     if ($value->seat > 0) {
+        //         if (isset($temp_assign[$value->tras_id])) {
+        //             $temp_assign[$value->tras_id] = $temp_assign[$value->tras_id] + 1;
+        //         } else {
+        //             $temp_assign[$value->tras_id] = 1;
+        //         }
+        //     }
+        // }
+
+        // foreach ($classInfo as $value) {
+        //     if (isset($temp_assign[$value->tras_id])) {
+        //         $value->days_active = $temp_assign[$value->tras_id];
+        //     }
+        // }
 
         return $classInfo;
     }

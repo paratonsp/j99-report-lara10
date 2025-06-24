@@ -11,7 +11,7 @@ class Pariwisata extends Model
 
     public function scopeGetTarget($query, $param)
     {
-        $query = DB::table('report_target_akap');
+        $query = DB::table('report_target_pariwisata');
         $query = $query->where('month', $param['month'])->where('year', $param['year']);;
         $query = $query->select('*')->get();
 

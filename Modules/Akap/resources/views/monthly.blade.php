@@ -168,9 +168,9 @@ $endYear = date('Y') + 1;
                             <td>{{ $item['bus'] }}</td>
                             <td>{{ $item['trip'] }}</td>
                             @foreach ($item['data'] as $key => $itemData)
-                            <td>{{ $itemData['occupancy'] }}</td>
-                            <td>{{ $itemData['seat_sale'] }}</td>
-                            <td>{{ $itemData['max_seat'] }}</td>
+                                <td>{{ $itemData['occupancy'] }}</td>
+                                <td>{{ $itemData['seat_sale'] }}</td>
+                                <td>{{ $itemData['max_seat'] }}</td>  
                             @endforeach
                         </tr>
                         @endforeach

@@ -298,7 +298,7 @@ class AkapMonthlyController extends Controller
 
     public function occupancyByTrasTable($param)
     {
-        $classInfo = Akap::getAkapClassInfoList($param);
+        $classInfo = Akap::getAkapClassInfoTable($param);
 
         $tras_seat = array();
 

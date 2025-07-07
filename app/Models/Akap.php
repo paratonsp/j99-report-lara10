@@ -259,6 +259,7 @@ class Akap extends Model
             ->join('fleet_registration AS fr', 'tras.fleet_registration_id', '=', 'fr.id')
             ->join('fleet_registration_type AS frt', 'fr.reg_no', '=', 'frt.registration')
             ->join('fleet_type AS ft', 'frt.type', '=', 'ft.id')
+            ->where('tras.status', 1)
             ->orderBy('tras.status', 'DESC')
             ->orderBy('tras.id', 'ASC')
             ->get();

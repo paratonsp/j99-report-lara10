@@ -415,25 +415,35 @@ class AkapMonthlyController extends Controller
 
         $book_seat = Akap::getBookByBus($param);
 
-        foreach ($book_seat as $keyA => $valueA) {
-            $valueA->max_seat = 0;
-            foreach ($class_info as $keyB => $valueB) {
-                if ($valueA->tras_id == $valueB->tras_id) {
-                    $valueA->max_seat = $valueA->max_seat + $valueB->total_seat;
-                }
-            }
-        }
+        // REFERENCE BY BOOK
+        // foreach ($book_seat as $valueA) {
+        //     $valueA->max_seat = 0;
+        //     foreach ($class_info as $valueB) {
+        //         if ($valueA->tras_id == $valueB->tras_id) {
+        //             $valueA->max_seat = $valueA->max_seat + $valueB->total_seat;
+        //         }
+        //     }
+        // }
 
         $bus_seat = array();
 
         foreach ($book_seat as $key => $value) {
             if (array_key_exists($value->name, $bus_seat)) {
                 $bus_seat[$value->name]['passengger'] = $bus_seat[$value->name]['passengger'] + $value->passengger;
-                $bus_seat[$value->name]['max_seat'] = $bus_seat[$value->name]['max_seat'] + $value->max_seat;
             } else {
                 $bus_seat[$value->name]['name'] = $value->name;
                 $bus_seat[$value->name]['passengger'] = $value->passengger;
-                $bus_seat[$value->name]['max_seat'] = $value->max_seat;
+                $bus_seat[$value->name]['max_seat'] = 0;
+                $bus_seat[$value->name]['tras_id'] = $value->tras_id;
+            }
+        }
+
+        // REFERENCE BY SCHADULE
+        foreach ($bus_seat as $key => $valueA) {
+            foreach ($class_info as $valueB) {
+                if ($valueA['tras_id'] == $valueB->tras_id) {
+                    $bus_seat[$key]['max_seat'] = $bus_seat[$key]['max_seat'] + ($valueB->total_seat * $valueB->days_active);
+                }
             }
         }
 

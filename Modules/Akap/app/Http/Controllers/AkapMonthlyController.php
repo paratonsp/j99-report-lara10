@@ -440,9 +440,12 @@ class AkapMonthlyController extends Controller
 
         // REFERENCE BY SCHADULE
         foreach ($bus_seat as $key => $valueA) {
+            $bus_seat[$key]['trip_count'] = 0;
+            $bus_seat[$key]['max_seat'] = 0;
             foreach ($class_info as $valueB) {
                 if ($valueA['tras_id'] == $valueB->tras_id) {
                     $bus_seat[$key]['max_seat'] = $bus_seat[$key]['max_seat'] + ($valueB->total_seat * $valueB->days_active);
+                    $bus_seat[$key]['trip_count'] = $valueB->days_active;
                 }
             }
         }
@@ -493,6 +496,7 @@ class AkapMonthlyController extends Controller
                 $class = str_replace("-", "", $class);
                 $data['doughnut_chart'][$key]['percentage'] = "{$percentage}%";
                 $data['doughnut_chart'][$key]['label'] = $value['name'];
+                $data['doughnut_chart'][$key]['trip_count'] = $value['trip_count'];
                 $data['doughnut_chart'][$key]['chart'] = Chartjs::build()
                     ->name("OccupancyByBusDoughnut{$class}")
                     ->type("doughnut")
@@ -512,6 +516,7 @@ class AkapMonthlyController extends Controller
         } else {
             $data['doughnut_chart'][0]['percentage'] = "";
             $data['doughnut_chart'][0]['label'] = "";
+            $data['doughnut_chart'][0]['trip_count'] = "";
             $data['doughnut_chart'][0]['chart'] = $this->nullChart('doughnut');
         }
 

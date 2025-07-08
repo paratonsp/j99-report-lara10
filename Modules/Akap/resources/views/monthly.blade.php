@@ -119,6 +119,7 @@ $endYear = date('Y') + 1;
                     <x-chartjs-component :chart="$item['chart']" />
                     <p class="mb-0"><strong>{{$item['percentage']}}</strong></p>
                     <p class="mb-0">{{$item['label']}}</p>
+                    <p class="mb-0">Jumlah Trip: {{$item['trip_count']}}</p>
                 </div>
                 @endforeach
             </div>

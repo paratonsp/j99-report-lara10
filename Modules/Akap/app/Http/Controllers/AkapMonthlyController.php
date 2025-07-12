@@ -105,7 +105,7 @@ class AkapMonthlyController extends Controller
         $data['occupancy_by_class_bar'] = $this->occupancyByClassChart($param,$classInfo)['bar_chart'];
         $data['occupancy_by_class_doughnut'] = $this->occupancyByClassChart($param,$classInfo)['doughnut_chart'];
         $data['ticketing_support_bar'] = $this->ticketingSupportChart($param)['bar_chart'];
-        $data['ticketing_support_doughnut'] = $this->ticketingSupportChart($param)['doughnut_chart'];
+        $data['ticketing_support_pie_chart'] = $this->ticketingSupportChart($param)['pie_chart'];
         $data['daily_passengger'] = $this->dailyPassenggerChart($param);
         $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param,$classInfo);
         $data['perbandingan_bulan_lalu_chart'] = $this->perbandinganBulanLaluChart($param)['chart'];
@@ -130,8 +130,6 @@ class AkapMonthlyController extends Controller
 
         return view('akap::monthly', $data);
     }
-
-
 
     public function nullChart($type)
     {
@@ -824,11 +822,11 @@ class AkapMonthlyController extends Controller
 
         $label = array($onlineLabel, $redbusLabel, $travelokaLabel, $kpLabel);
         $value = array($onlineValue, $redbusValue, $travelokaValue, $kpValue);
-        $color = array(generateColor(0), generateColor(1), generateColor(2), generateColor(2));
+        $color = array(generateColor(0), generateColor(2), generateColor(4), generateColor(6));
         $data['bar_chart'] = Chartjs::build()
             ->name("TicketSupport")
             ->type("horizontalBar")
-            ->size(["width" => 400, "height" => 100])
+            ->size(["width" => 400, "height" => 200])
             ->labels($label)
             ->datasets([
                 [
@@ -842,34 +840,31 @@ class AkapMonthlyController extends Controller
                     'legend' => false
                 ]
             ]);
-
+            
         $totalValue = $onlineValue + $redbusValue + $travelokaValue + $kpValue;
+        $percentageValue = array();
 
-        foreach ($label as $key => $x) {
-            $leftValue = $totalValue - $value[$key];
+        foreach ($value as $val) {
             $percentage = 0;
-            $percentage = ($value[$key] * 100 / $totalValue);
+            $percentage = ($val * 100 / $totalValue);
             $percentage = number_format($percentage, 2, '.', '');
-            $class = str_replace(' ', '', $x);
-            $class = str_replace("-", "", $class);
-            $data['doughnut_chart'][$key]['percentage'] = "{$percentage}%";
-            $data['doughnut_chart'][$key]['label'] = $x;
-            $data['doughnut_chart'][$key]['chart'] = Chartjs::build()
-                ->name("TicketingSupportDoughnut{$class}")
-                ->type("doughnut")
-                ->size(["width" => 400, "height" => 150])
-                ->labels([$x, ''])
-                ->datasets([
-                    [
-                        'backgroundColor' => [$color[$key], generateColor(3)],
-                        "data" => [$value[$key], $leftValue],
-                    ]
-                ])->options([
-                    'plugins' => [
-                        'legend' => false
-                    ]
-                ]);
+            array_push($percentageValue, $percentage);
         }
+
+        $label = array($onlineLabel.": {$percentageValue[0]}%", $redbusLabel.": {$percentageValue[1]}%", $travelokaLabel.": {$percentageValue[2]}%", $kpLabel.": {$percentageValue[3]}%");
+
+        $data['pie_chart'] = Chartjs::build()
+        ->name("TicketingSupportPieChart")
+        ->type("pie")
+        ->size(["width" => 400, "height" => 400])
+        ->labels($label)
+        ->datasets([
+            [
+                "label" => "Penumpang",
+                "data" => $value,
+                'backgroundColor' => $color,
+            ]
+        ]);
 
         return $data;
     }

@@ -225,19 +225,14 @@ $endYear = date('Y') + 1;
             <div class="col-12 incomeSection">
                 <p>Ticketing Support</p>
             </div>
-            <div class="col-12">
+            <br>
+            <div class="col-lg-8 col-12">
                 <x-chartjs-component :chart="$ticketing_support_bar" />
             </div>
-
-            <div class="row col-12 justify-content-center">
-                @foreach ($ticketing_support_doughnut as $key => $item)
-                <div class="col-3" style="justify-items: center;">
-                    <x-chartjs-component :chart="$item['chart']" />
-                    <p class="mb-0"><strong>{{$item['percentage']}}</strong></p>
-                    <p class="mb-0">{{$item['label']}}</p>
-                </div>
-                @endforeach
+            <div class="col-lg-4 col-12">
+                <x-chartjs-component :chart="$ticketing_support_pie_chart" />
             </div>
+
         </div>
 
         <div class="row mb-5">

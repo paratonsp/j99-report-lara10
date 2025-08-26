@@ -411,7 +411,8 @@ class Akap extends Model
                 $join->on('mn.trip_assign', '=', 'x.tras_id')
                     ->whereRaw('mn.trip_date = DATE(x.date)');
             })
-            ->join('ops_roadwarrant as rw', 'rw.manifest_uuid', '=', 'mn.uuid')
+            // ->join('ops_roadwarrant as rw', 'rw.manifest_uuid', '=', 'mn.uuid')
+            ->join('ops_roadwarrant as rw', 'rw.uuid', '=', 'mn.roadwarrant_uuid')
             ->join('v2_bus as bus', 'rw.bus_uuid', '=', 'bus.uuid')
             ->select(
                 DB::raw('bus.name as name'),

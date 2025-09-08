@@ -429,37 +429,22 @@ class Akap extends Model
 
     public function scopeGetBookByTripAssign($query, $param)
     {
-        $bindings = [
-            $param['month'],
-            $param['year'],
-        ];
-
-        $sql = "
-            SELECT 
-                tb.tras_id,
-                DAY(tb.booking_date) AS date,
-                COUNT(tps.id) AS seat
-            FROM tkt_booking tb
-            JOIN tkt_booking_head tbh 
-                ON tb.booking_code = tbh.booking_code
-            JOIN tkt_passenger_pcs tps 
-                ON tb.id_no = tps.booking_id
-            WHERE MONTH(tb.booking_date) = ?
-            AND YEAR(tb.booking_date) = ?
-            AND tbh.payment_status = 1
-        ";
-
-        if (!empty($param['trip_assign_group'])) {
-            $placeholders = implode(',', array_fill(0, count($param['trip_assign_group']), '?'));
-            $sql .= " AND tb.tras_id IN ($placeholders)";
-            $bindings = array_merge($bindings, $param['trip_assign_group']);
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_assign_group'])) {
+            $query = $query->whereIn('tb.tras_id', $param['trip_assign_group']);
         }
+        $query = $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year'])
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
+            ->groupBy('tb.tras_id')
+            ->groupBy(DB::raw('DAY(tb.booking_date)'))
+            ->select(
+                DB::raw('tb.tras_id, DAY(tb.booking_date) as date, SUM(tb.total_seat) AS seat')
+            )
+            ->get();
 
-        $sql .= "
-            GROUP BY tb.tras_id, DAY(tb.booking_date)
-        ";
-
-        return DB::select($sql, $bindings);
+        return $query;
     }
 
     public function scopeGetDailyIncome($query, $startDate, $endDate)

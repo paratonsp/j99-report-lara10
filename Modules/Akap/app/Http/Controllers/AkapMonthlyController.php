@@ -357,8 +357,7 @@ class AkapMonthlyController extends Controller
 
         $book_seat = Akap::getBookByTripAssign($param);
         foreach ($book_seat as $value) {
-            $passengers = Akap::getPassengers($value->idNo);
-            if (count($passengers) > 0) {
+            if ($value->seat > 0) {
                 foreach ($tras_seat as $keyA => $valueA) {
                     if ($valueA['id'] == $value->tras_id) {
                         foreach ($valueA['data'] as $keyB => $valueB) {
@@ -386,7 +385,7 @@ class AkapMonthlyController extends Controller
                                     }
                                 }
 
-                                $tras_seat[$keyA]['data'][$keyB]['seat_sale'] = count($passengers);
+                                $tras_seat[$keyA]['data'][$keyB]['seat_sale'] = $value->seat;
                                 if ($tras_seat[$keyA]['data'][$keyB]['max_seat'] == 0) {
                                     $occup = 0;
                                 } else {

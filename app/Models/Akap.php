@@ -440,19 +440,9 @@ class Akap extends Model
             ->groupBy('tb.tras_id')
             ->groupBy(DB::raw('DAY(tb.booking_date)'))
             ->select(
-                DB::raw('tb.tras_id, DAY(tb.booking_date) as date, tb.id_no as idNo')
+                DB::raw('tb.tras_id, DAY(tb.booking_date) as date, SUM(tb.total_seat) AS seat')
             )
             ->get();
-
-        return $query;
-    }
-
-    public function scopeGetPassengers($query, $idNo)
-    {
-        $query = DB::table('tkt_passenger_pcs');
-        $query = $query->where('booking_id', $idNo);
-        $query = $query->where('cancel', 0);
-        $query = $query->select('*')->get();
 
         return $query;
     }

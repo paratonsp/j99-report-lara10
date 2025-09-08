@@ -447,6 +447,7 @@ class Akap extends Model
             WHERE MONTH(tb.booking_date) = ?
             AND YEAR(tb.booking_date) = ?
             AND tbh.payment_status = 1
+            AND tps.cancel = 0
         ";
 
         if (!empty($param['trip_assign_group'])) {

@@ -440,7 +440,7 @@ class Akap extends Model
             ->groupBy('tb.tras_id')
             ->groupBy(DB::raw('DAY(tb.booking_date)'))
             ->select(
-                DB::raw('tb.tras_id, DAY(tb.booking_date) as date, id_no as idNo')
+                DB::raw('tb.tras_id, DAY(tb.booking_date) as date, tb.id_no as idNo')
             )
             ->get();
 

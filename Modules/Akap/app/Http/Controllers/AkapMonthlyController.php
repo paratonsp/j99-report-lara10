@@ -98,23 +98,35 @@ class AkapMonthlyController extends Controller
         $param['trip_assign_group'] = explode(",", $param['trip_assign_group']);
 
         //CHART DATA
-        $data['occupancy_by_route_bar'] = $this->occupancyByRouteChart($param,$classInfo)['bar_chart'];
-        $data['occupancy_by_route_doughnut'] = $this->occupancyByRouteChart($param,$classInfo)['doughnut_chart'];
-        $data['occupancy_by_bus_bar'] = $this->occupancyByBusChart($param,$classInfo)['bar_chart'];
-        $data['occupancy_by_bus_doughnut'] = $this->occupancyByBusChart($param,$classInfo)['doughnut_chart'];
-        $data['occupancy_by_class_bar'] = $this->occupancyByClassChart($param,$classInfo)['bar_chart'];
-        $data['occupancy_by_class_doughnut'] = $this->occupancyByClassChart($param,$classInfo)['doughnut_chart'];
-        $data['ticketing_support_bar'] = $this->ticketingSupportChart($param)['bar_chart'];
-        $data['ticketing_support_pie_chart'] = $this->ticketingSupportChart($param)['pie_chart'];
+        $occRoute = $this->occupancyByRouteChart($param,$classInfo);
+        $data['occupancy_by_route_bar'] = $occRoute['bar_chart'];
+        $data['occupancy_by_route_doughnut'] = $occRoute['doughnut_chart'];
+
+        $occBus = $this->occupancyByBusChart($param,$classInfo);
+        $data['occupancy_by_bus_bar'] = $occBus['bar_chart'];
+        $data['occupancy_by_bus_doughnut'] = $occBus['doughnut_chart'];
+
+        $occClass = $this->occupancyByClassChart($param,$classInfo);
+        $data['occupancy_by_class_bar'] = $occClass['bar_chart'];
+        $data['occupancy_by_class_doughnut'] = $occClass['doughnut_chart'];
+
+        $tickSupport = $this->ticketingSupportChart($param);
+        $data['ticketing_support_bar'] = $tickSupport['bar_chart'];
+        $data['ticketing_support_pie_chart'] = $tickSupport['pie_chart'];
+
         $data['daily_passengger'] = $this->dailyPassenggerChart($param);
         $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param,$classInfo);
-        $data['perbandingan_bulan_lalu_chart'] = $this->perbandinganBulanLaluChart($param)['chart'];
-        $data['perbandingan_bulan_lalu_current_month'] = $this->perbandinganBulanLaluChart($param)['current_month'];
-        $data['perbandingan_bulan_lalu_last_month'] = $this->perbandinganBulanLaluChart($param)['last_month'];
-        $data['perbandingan_titik_naik_departure_bar_chart'] = $this->perbandinganTitikNaik($param)['departure_bar_chart'];
-        $data['perbandingan_titik_naik_arrival_bar_chart'] = $this->perbandinganTitikNaik($param)['arrival_bar_chart'];
-        $data['perbandingan_titik_naik_departure_doughnut_chart'] = $this->perbandinganTitikNaik($param)['departure_doughnut_chart'];
-        $data['perbandingan_titik_naik_arrival_doughnut_chart'] = $this->perbandinganTitikNaik($param)['arrival_doughnut_chart'];
+
+        $perbBulanLalu = $this->perbandinganBulanLaluChart($param);
+        $data['perbandingan_bulan_lalu_chart'] = $perbBulanLalu['chart'];
+        $data['perbandingan_bulan_lalu_current_month'] = $perbBulanLalu['current_month'];
+        $data['perbandingan_bulan_lalu_last_month'] = $perbBulanLalu['last_month'];
+
+        $perbTitikNaik = $this->perbandinganTitikNaik($param);
+        $data['perbandingan_titik_naik_departure_bar_chart'] = $perbTitikNaik['departure_bar_chart'];
+        $data['perbandingan_titik_naik_arrival_bar_chart'] = $perbTitikNaik['arrival_bar_chart'];
+        $data['perbandingan_titik_naik_departure_doughnut_chart'] = $perbTitikNaik['departure_doughnut_chart'];
+        $data['perbandingan_titik_naik_arrival_doughnut_chart'] = $perbTitikNaik['arrival_doughnut_chart'];
 
 
         //DATA
@@ -122,8 +134,10 @@ class AkapMonthlyController extends Controller
         $data['target'] = $target;
         $data['route_group'] = Akap::getTripRouteGroup();
         $data['title'] = 'REPORT AKAP BULANAN';
-        $data['trip_assign_open'] = $this->daftarAbsensiBus($param)['trip_assign_open'];
-        $data['trip_assign_close'] = $this->daftarAbsensiBus($param)['trip_assign_close'];
+
+        $daftarAbsensi = $this->daftarAbsensiBus($param);
+        $data['trip_assign_open'] = $daftarAbsensi['trip_assign_open'];
+        $data['trip_assign_close'] = $daftarAbsensi['trip_assign_close'];
 
         //TABLE
         $data['occupancy_rate'] = $this->occupancyByTrasTable($param);

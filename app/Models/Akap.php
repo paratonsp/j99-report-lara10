@@ -396,21 +396,19 @@ class Akap extends Model
                 mn.uuid AS uuid,
                 x.date AS date,
                 x.tras_id AS tras_id,
-                SUM(x.total_seat) AS passengger
+                COUNT(tps.id) AS passengger
             FROM (
                 SELECT 
                     tb.tras_id AS tras_id,
+                    tb.id_no AS idNo,
                     DATE(tb.booking_date) AS date,
-                    COUNT(tps.id) AS total_seat
+                    SUM(tb.total_seat) AS total_seat
                 FROM tkt_booking tb
                 JOIN tkt_booking_head tbh 
                     ON tb.booking_code = tbh.booking_code
-                JOIN tkt_passenger_pcs tps 
-                    ON tb.id_no = tps.booking_id
                 WHERE MONTH(tb.booking_date) = ?
                 AND YEAR(tb.booking_date) = ?
                 AND tbh.payment_status = 1
-                AND tps.cancel = 0
         ";
 
         // filter trip_assign_group kalau ada
@@ -430,6 +428,9 @@ class Akap extends Model
                 ON rw.uuid = mn.roadwarrant_uuid
             JOIN v2_bus bus 
                 ON rw.bus_uuid = bus.uuid
+            JOIN tkt_passenger_pcs tps 
+                ON x.idNo = tps.booking_id
+            WHERE tps.cancel = 0
             GROUP BY bus.name, mn.uuid, x.date, x.tras_id
         ";
 

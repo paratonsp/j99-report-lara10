@@ -385,46 +385,54 @@ class Akap extends Model
 
     public function scopeGetBookByBus($query, $param)
     {
-        // Build the subquery
-        $subQuery = DB::table('tkt_booking as tb')
-            ->select(
-                'tb.tras_id as tras_id',
-                DB::raw('DATE(tb.booking_date) as date'),
-                DB::raw('SUM(tb.total_seat) as total_seat'),
-            )
-            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
-            ->whereMonth('tb.booking_date', $param['month'])
-            ->whereYear('tb.booking_date', $param['year'])
-            ->where('tbh.payment_status', 1);
+        $bindings = [
+            $param['month'],
+            $param['year'],
+        ];
 
-        if (isset($param['trip_assign_group'])) {
-            $subQuery = $subQuery->whereIn('tb.tras_id', $param['trip_assign_group']);
+        $sql = "
+            SELECT 
+                bus.name AS name,
+                mn.uuid AS uuid,
+                x.date AS date,
+                x.tras_id AS tras_id,
+                SUM(x.total_seat) AS passengger
+            FROM (
+                SELECT 
+                    tb.tras_id AS tras_id,
+                    DATE(tb.booking_date) AS date,
+                    COUNT(tps.id) AS total_seat
+                FROM tkt_booking tb
+                JOIN tkt_booking_head tbh 
+                    ON tb.booking_code = tbh.booking_code
+                JOIN tkt_passenger_pcs tps 
+                    ON tb.id_no = tps.booking_id
+                WHERE MONTH(tb.booking_date) = ?
+                AND YEAR(tb.booking_date) = ?
+                AND tbh.payment_status = 1
+        ";
+
+        // filter trip_assign_group kalau ada
+        if (!empty($param['trip_assign_group'])) {
+            $placeholders = implode(',', array_fill(0, count($param['trip_assign_group']), '?'));
+            $sql .= " AND tb.tras_id IN ($placeholders)";
+            $bindings = array_merge($bindings, $param['trip_assign_group']);
         }
 
-        $subQuery = $subQuery->groupBy('tb.tras_id', DB::raw('DATE(tb.booking_date)'));
+        $sql .= "
+                GROUP BY tb.tras_id, DATE(tb.booking_date)
+            ) x
+            JOIN manifest mn 
+                ON mn.trip_assign = x.tras_id 
+            AND mn.trip_date = DATE(x.date)
+            JOIN ops_roadwarrant rw 
+                ON rw.uuid = mn.roadwarrant_uuid
+            JOIN v2_bus bus 
+                ON rw.bus_uuid = bus.uuid
+            GROUP BY bus.name, mn.uuid, x.date, x.tras_id
+        ";
 
-
-        // Use the subquery as a derived table
-        $query = DB::table(DB::raw("({$subQuery->toSql()}) as x"))
-            ->mergeBindings($subQuery) // important to include bindings!
-            ->join('manifest as mn', function ($join) {
-                $join->on('mn.trip_assign', '=', 'x.tras_id')
-                    ->whereRaw('mn.trip_date = DATE(x.date)');
-            })
-            // ->join('ops_roadwarrant as rw', 'rw.manifest_uuid', '=', 'mn.uuid')
-            ->join('ops_roadwarrant as rw', 'rw.uuid', '=', 'mn.roadwarrant_uuid')
-            ->join('v2_bus as bus', 'rw.bus_uuid', '=', 'bus.uuid')
-            ->select(
-                DB::raw('bus.name as name'),
-                DB::raw('mn.uuid as uuid'),
-                DB::raw('x.date as date'),
-                DB::raw('x.tras_id as tras_id'),
-                DB::raw('SUM(x.total_seat) as passengger')
-            )
-            ->groupBy('bus.name', 'mn.uuid')
-            ->get();
-
-        return $query;
+        return DB::select($sql, $bindings);
     }
 
     public function scopeGetBookByTripAssign($query, $param)

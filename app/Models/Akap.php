@@ -113,18 +113,16 @@ class Akap extends Model
         $query = DB::table('tkt_booking_head as tbh')
             ->join('tkt_booking as tb', 'tbh.booking_code', '=', 'tb.booking_code')
             ->join('tkt_passenger_pcs as tpp', 'tb.id_no', '=', 'tpp.booking_id')
-            ->where('tbh.payment_status', 1);
+            ->where('tbh.payment_status', 1)
+            ->where('tpp.cancel', 0);
 
-        // filter trip_group
         if (!empty($param['trip_group'])) {
             $query->whereIn('tb.trip_id_no', $param['trip_group']);
         }
 
-        // filter bulan & tahun
         $query->whereMonth('tb.booking_date', $param['month'])
             ->whereYear('tb.booking_date', $param['year']);
 
-        // sum berdasarkan formula price
         return $query->sum(DB::raw("
             CASE 
             WHEN tbh.total_price = 0 THEN 0

@@ -107,21 +107,46 @@ class Akap extends Model
 
         return $query;
     }
-
+    
     public function scopeGetIncome($query, $param)
     {
-        $query = DB::table('tkt_booking as tb');
-        if (isset($param['trip_group'])) {
-            $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
-        }
-        $query = $query->whereMonth('tb.booking_date', $param['month']);
-        $query = $query->whereYear('tb.booking_date', $param['year']);
-        $query = $query->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code');
-        $query = $query->where('tbh.payment_status', 1);
-        $query = $query->sum('price');
+        $query = DB::table('tkt_booking_head as tbh')
+            ->join('tkt_booking as tb', 'tbh.booking_code', '=', 'tb.booking_code')
+            ->join('tkt_passenger_pcs as tpp', 'tb.id_no', '=', 'tpp.booking_id')
+            ->where('tbh.payment_status', 1);
 
-        return $query;
+        // filter trip_group
+        if (!empty($param['trip_group'])) {
+            $query->whereIn('tb.trip_id_no', $param['trip_group']);
+        }
+
+        // filter bulan & tahun
+        $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year']);
+
+        // sum berdasarkan formula price
+        return $query->sum(DB::raw("
+            CASE 
+            WHEN tbh.total_price = 0 THEN 0
+            ELSE (tbh.total_price / tbh.total_seat)
+            END
+        "));
     }
+
+    // public function scopeGetIncome($query, $param)
+    // {
+    //     $query = DB::table('tkt_booking as tb');
+    //     if (isset($param['trip_group'])) {
+    //         $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
+    //     }
+    //     $query = $query->whereMonth('tb.booking_date', $param['month']);
+    //     $query = $query->whereYear('tb.booking_date', $param['year']);
+    //     $query = $query->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code');
+    //     $query = $query->where('tbh.payment_status', 1);
+    //     $query = $query->sum('price');
+
+    //     return $query;
+    // }
 
     public function scopeGetDailyPassengger($query, $param)
     {

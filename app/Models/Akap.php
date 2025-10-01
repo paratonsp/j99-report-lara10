@@ -495,20 +495,50 @@ class Akap extends Model
         return DB::select($sql, $bindings);
     }
 
+    // public function scopeGetDailyIncome($query, $startDate, $endDate)
+    // {
+    //     $betweenDate = [$startDate, $endDate];
+    //     $query = DB::table('tkt_booking as tb');
+    //     $query = $query->whereBetween('tb.booking_date', $betweenDate);
+    //     $query = $query->groupBy('tb.trip_route_id');
+    //     $query = $query->select(
+    //         DB::raw('tb.trip_route_id, SUM(tb.price) AS price')
+    //     );
+    //     $query = $query->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code');
+    //     $query = $query->where('tbh.payment_status', 1);
+    //     $query = $query->get();
+
+    //     return $query;
+    // }
+
     public function scopeGetDailyIncome($query, $startDate, $endDate)
     {
         $betweenDate = [$startDate, $endDate];
-        $query = DB::table('tkt_booking as tb');
-        $query = $query->whereBetween('tb.booking_date', $betweenDate);
-        $query = $query->groupBy('tb.trip_route_id');
-        $query = $query->select(
-            DB::raw('tb.trip_route_id, SUM(tb.price) AS price')
-        );
-        $query = $query->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code');
-        $query = $query->where('tbh.payment_status', 1);
-        $query = $query->get();
+        $query = DB::table('tkt_booking_head as tbh')
+            ->join('tkt_booking as tb', 'tbh.booking_code', '=', 'tb.booking_code')
+            ->join('tkt_passenger_pcs as tpp', 'tb.id_no', '=', 'tpp.booking_id')
+            ->where('tbh.payment_status', 1)
+            ->where('tpp.cancel', 0);
 
-        return $query;
+        if (!empty($param['trip_group'])) {
+            $query->whereIn('tb.trip_id_no', $param['trip_group']);
+        }
+
+        $query = $query->whereBetween('tb.booking_date', $betweenDate);
+
+        return $query->selectRaw("
+                DATE(tb.booking_date) as booking_date,
+                tb.trip_route_id,
+                SUM(
+                    CASE 
+                        WHEN tbh.total_price = 0 THEN 0
+                        ELSE (tbh.total_price / tbh.total_seat)
+                    END
+                ) as total_price
+            ")
+            ->groupBy(DB::raw("DATE(tb.booking_date)"), "tb.trip_route_id")
+            ->orderBy("booking_date", "ASC")
+            ->get();
     }
 
     public function scopeGetTripAssignDetail($query, $id)

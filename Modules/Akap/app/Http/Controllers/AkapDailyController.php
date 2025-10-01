@@ -47,7 +47,7 @@ class AkapDailyController extends Controller
 
             foreach ($daily_income as $item) {
                 if (in_array($item->trip_route_id, $value->route)) {;
-                    $value->income = $value->income + $item->price;
+                    $value->income = $value->income + $item->total_price;
                 }
             }
 

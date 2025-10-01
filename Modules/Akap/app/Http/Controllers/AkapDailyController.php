@@ -21,10 +21,12 @@ class AkapDailyController extends Controller
         $dateEnd = date("Y-m-d 23:59:59", strtotime($dateEnd));
 
         $daily_income = Akap::getDailyIncome($dateStart, $dateEnd);
+        $daily_selling = Akap::getDailySelling($dateStart, $dateEnd);
 
         $trip_route_group = Akap::getTripRouteGroup();
 
         $mainIncome = 0;
+        $mainSelling = 0;
 
         foreach ($trip_route_group as $value) {
             $temp_route = array();
@@ -44,6 +46,7 @@ class AkapDailyController extends Controller
             unset($value->route_y);
 
             $value->income = 0;
+            $value->selling = 0;
 
             foreach ($daily_income as $item) {
                 if (in_array($item->trip_route_id, $value->route)) {;
@@ -51,11 +54,21 @@ class AkapDailyController extends Controller
                 }
             }
 
+            foreach ($daily_selling as $item) {
+                if (in_array($item->trip_route_id, $value->route)) {;
+                    $value->selling = $value->selling + $item->total_price;
+                }
+            }
+
             $mainIncome = $mainIncome + $value->income;
             $value->income = Number::currency($value->income, 'IDR');
+
+            $mainSelling = $mainSelling + $value->selling;
+            $value->selling = Number::currency($value->selling, 'IDR');
         }
 
         $data['mainIncome'] = Number::currency($mainIncome, 'IDR');
+        $data['mainSelling'] = Number::currency($mainSelling, 'IDR');
         $data['routeIncome'] = $trip_route_group;
 
         $data['title'] = 'REPORT AKAP HARIAN';

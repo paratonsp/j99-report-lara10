@@ -130,6 +130,7 @@ class AkapMonthlyController extends Controller
 
 
         //DATA
+        $data['selling'] = Number::currency(Akap::getSelling($param), 'IDR');
         $data['income'] = Number::currency(Akap::getIncome($param), 'IDR');
         $data['target'] = $target;
         $data['route_group'] = Akap::getTripRouteGroup();

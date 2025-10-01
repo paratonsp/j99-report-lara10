@@ -56,17 +56,16 @@ $endYear = date('Y') + 1;
 
         <div class="row">
             <div class="col-lg-8 col-12 incomeSection mb-3 mt-3">
-                <p>Total Penjualan Tiket:</p>
-                <p><strong>{{ $selling }}</strong></p>
-                <br>
-            </div>
-            <div class="col-lg-8 col-12 incomeSection mb-5">
                 <p>Total Tiket Berangkat:</p>
                 <p><strong>{{ $income }}</strong></p>
                 <br>
                 <p style="font-size: 1em;">Target: <strong>{{ $target }}</strong></p>
             </div>
-
+            <div class="col-lg-8 col-12 incomeSection mb-5">
+                <p>Total Penjualan Tiket:</p>
+                <p><strong>{{ $selling }}</strong></p>
+                <br>
+            </div>
             <div class="col-lg-4 col-12 mb-5 mt-3 align-content-center">
                 <div class="row col-12">
                     <div class="col-6 align-content-center m-0 p-0">

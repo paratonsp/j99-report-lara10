@@ -25,12 +25,12 @@ $dateEnd = $dateEnd->format('Y-m-d');
             <h3>Total Pendapatan Semua Rute</h3>
         </div>
         <div class="col-12 incomeSection m-1">
-            <p>Total Penjualan Tiket:</p>
-            <p><strong>{{ $mainSelling }}</strong></p>
-        </div>
-        <div class="col-12 incomeSection m-1">
             <p>Total Tiket Berangkat:</p>
             <p><strong>{{ $mainIncome }}</strong></p>
+        </div>
+        <div class="col-12 incomeSection m-1">
+            <p>Total Penjualan Tiket:</p>
+            <p><strong>{{ $mainSelling }}</strong></p>
         </div>
     </div>
     <div class="row col-12 mb-3">

@@ -28,8 +28,7 @@ class AkapMonthlyController extends Controller
 
         if ($request->has('trip')) {
             $trip = $request->input('trip');
-            $trip_route_group = Akap::getTripRouteGroup($trip);
-            $trip_route_grouped = Akap::getTripRouteGroup($trip);
+            $trip_route_group = $trip_route_grouped = Akap::getTripRouteGroup($trip);
             if (isset($trip_route_group)) {
                 $temp_route = array();
                 $rx = explode(",", $trip_route_group[0]->route_x);

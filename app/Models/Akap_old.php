@@ -43,7 +43,9 @@ class Akap extends Model
         if (isset($param['trip_group'])) {
             $query = $query->whereIn('trip', $param['trip_group']);
         }
-        return $query->pluck('id');
+        $query = $query->select('id')->get();
+
+        return $query;
     }
 
     public function scopeGetTripGroup($query, $param)
@@ -52,7 +54,9 @@ class Akap extends Model
         if (isset($param['trip_route_group'])) {
             $query = $query->whereIn('route', $param['trip_route_group']);
         }
-        return $query->pluck('trip_id');
+        $query = $query->select('trip_id')->get();
+
+        return $query;
     }
 
     public function scopeGetTripAssignOpen($query, $param)
@@ -150,81 +154,100 @@ class Akap extends Model
         "));
     }
 
-    public function scopeGetDailyPassengerCounts($query, $param)
+    public function scopeGetDailyPassengger($query, $param)
     {
-        $query = DB::table('tkt_booking as tb')
-            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
-            ->join('tkt_passenger_pcs as tpp', 'tb.id_no', '=', 'tpp.booking_id')
-            ->where('tbh.payment_status', 1)
-            ->where('tpp.cancel', 0)
-            ->whereMonth('tb.booking_date', $param['month'])
-            ->whereYear('tb.booking_date', $param['year']);
-
-        if (!empty($param['trip_group'])) {
-            $query->whereIn('tb.trip_id_no', $param['trip_group']);
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_group'])) {
+            $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
         }
-
-        return $query->groupBy(DB::raw('DAY(tb.booking_date)'))
+        $query = $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year'])
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
+            ->groupBy(DB::raw('DAY(tb.booking_date)'))
             ->select(
-                DB::raw('DAY(tb.booking_date) as date'),
-                DB::raw('COUNT(tpp.id) AS seat')
+                DB::raw('DAY(tb.booking_date) as date, SUM(tb.total_seat) AS seat')
             )
             ->pluck('seat', 'date');
+
+        return $query;
     }
 
-    public function scopeGetDailyPassengerCountsByRoute($query, $param, $routes = [])
+    public function scopeGetDailyPassenggerIncome($query, $param)
     {
-        $query = DB::table('tkt_booking as tb')
-            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
-            ->join('tkt_passenger_pcs as tpp', 'tb.id_no', '=', 'tpp.booking_id')
-            ->where('tbh.payment_status', 1)
-            ->where('tpp.cancel', 0)
-            ->whereMonth('tb.booking_date', $param['month'])
-            ->whereYear('tb.booking_date', $param['year']);
-
-        if (!empty($routes)) {
-            $query->whereIn('tb.trip_route_id', $routes);
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_group'])) {
+            $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
         }
-
-        if (empty($param['trip_group'])) {
-            // do nothing
-        } else {
-            $query->whereIn('tb.trip_id_no', $param['trip_group']);
-        }
-
-        return $query->groupBy('tb.trip_route_id', DB::raw('DAY(tb.booking_date)'))
+        $query = $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year'])
+            ->where('tb.tkt_refund_id', NULL)
             ->select(
-                DB::raw('DAY(tb.booking_date) as date'),
-                'tb.trip_route_id',
-                DB::raw('COUNT(tpp.id) AS seat')
+                DB::raw('SUM(tb.total_seat) AS seat, SUM(tb.price) AS price')
             )
-            ->get();
-    }
-
-    public function scopeGetMonthlyIncomeAndSeats($query, $param)
-    {
-        $query = DB::table('tkt_booking as tb')
             ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
-            ->join('tkt_passenger_pcs as tpp', 'tb.id_no', '=', 'tpp.booking_id')
             ->where('tbh.payment_status', 1)
-            ->where('tpp.cancel', 0)
-            ->whereMonth('tb.booking_date', $param['month'])
-            ->whereYear('tb.booking_date', $param['year']);
+            ->get();
 
-        if (!empty($param['trip_group'])) {
-            $query->whereIn('tb.trip_id_no', $param['trip_group']);
-        }
-
-        return $query->select(
-                DB::raw('SUM(tbh.total_price / tbh.total_seat) AS price'),
-                DB::raw('COUNT(tpp.id) AS seat')
-            )
-            ->first();
+        return $query;
     }
 
+    public function scopeGetTicketDeparturePointGroup($query, $param)
+    {
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_group'])) {
+            $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
+        }
+        $query = $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year'])
+            ->groupBy(DB::raw('tb.pickup_trip_location'))
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
+            ->select(
+                DB::raw('SUM(tb.total_seat) AS seat, tb.pickup_trip_location as point')
+            )
+            ->orderBy('seat', 'DESC')
+            ->pluck('seat', 'point');
 
+        return $query;
+    }
 
+    public function scopeGetTicketArrivalPointGroup($query, $param)
+    {
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_group'])) {
+            $query = $query->whereIn('tb.trip_id_no', $param['trip_group']);
+        }
+        $query = $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year'])
+            ->groupBy(DB::raw('tb.drop_trip_location'))
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
+            ->select(
+                DB::raw('SUM(tb.total_seat) AS seat, tb.drop_trip_location as point')
+            )
+            ->orderBy('seat', 'DESC')
+            ->pluck('seat', 'point');
 
+        return $query;
+    }
+
+    public function scopeGetDailyPassenggerByTrip($query, $param, $trip)
+    {
+        $query = DB::table('tkt_booking as tb');
+        $query = $query->whereIn('tb.trip_route_id', $trip);
+        $query = $query->whereMonth('tb.booking_date', $param['month'])
+            ->whereYear('tb.booking_date', $param['year'])
+            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
+            ->where('tbh.payment_status', 1)
+            ->groupBy(DB::raw('DAY(tb.booking_date)'))
+            ->select(
+                DB::raw('DAY(tb.booking_date) as date, SUM(tb.total_seat) AS seat')
+            )
+            ->pluck('seat', 'date');
+
+        return $query;
+    }
 
     public function scopeGetTicketingSupport($query, $param)
     {
@@ -254,12 +277,10 @@ class Akap extends Model
         $query = $query
             ->select(
                 'tr.route as trip_route_id',
-                'tr.trip_title as trip',
                 'tras.fleet_registration_id',
                 'tras.status',
                 'tras.id as tras_id',
                 'tras.assign_time',
-                'fr.reg_no as bus',
                 'frt.registration',
                 'ft.id as fleet_type',
                 'ft.type',
@@ -288,12 +309,10 @@ class Akap extends Model
         $query = $query
             ->select(
                 'tr.route as trip_route_id',
-                'tr.trip_title as trip',
                 'tras.fleet_registration_id',
                 'tras.status',
                 'tras.id as tras_id',
                 'tras.assign_time',
-                'fr.reg_no as bus',
                 'frt.registration',
                 'ft.id as fleet_type',
                 'ft.type',
@@ -359,26 +378,40 @@ class Akap extends Model
         return $query;
     }
 
-    public function scopeGetSeatAndClassBookingData($query, $param)
+    public function scopeGetBookSeat($query, $param)
     {
-        $query = DB::table('tkt_booking as tb')
-            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
-            ->join('tkt_passenger_pcs as tpp', 'tb.id_no', '=', 'tpp.booking_id')
-            ->leftJoin('fleet_type as ft', 'tb.fleet_type', '=', 'ft.id')
-            ->where('tbh.payment_status', 1)
-            ->where('tpp.cancel', 0)
-            ->whereMonth('tb.booking_date', $param['month'])
-            ->whereYear('tb.booking_date', $param['year']);
+        $query = DB::table('tkt_booking as tb');
+        $query = $query->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code');
+        $query = $query->where('tbh.payment_status', 1);
+        $query = $query->whereMonth('tb.booking_date', $param['month']);
+        $query = $query->whereYear('tb.booking_date', $param['year']);
+        $query = $query->groupBy('tb.trip_route_id')
+            ->select(
+                DB::raw('tb.trip_route_id, SUM(tb.total_seat) as passengger')
+            )
+            ->get();
 
-        if (!empty($param['trip_group'])) {
-            $query->whereIn('tb.trip_id_no', $param['trip_group']);
-        }
-        
-        if (!empty($param['trip_assign_group'])) {
-            $query->whereIn('tb.tras_id', $param['trip_assign_group']);
-        }
+        return $query;
+    }
 
-        return $query->select('tb.trip_route_id', 'ft.type', 'tb.pickup_trip_location', 'tb.drop_trip_location')->get();
+    public function scopeGetBookByClass($query, $param)
+    {
+        $query = DB::table('tkt_booking as tb');
+        if (isset($param['trip_assign_group'])) {
+            $query = $query->whereIn('tb.tras_id', $param['trip_assign_group']);
+        }
+        $query = $query->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code');
+        $query = $query->join('fleet_type as ft', 'tb.fleet_type', '=', 'ft.id');
+        $query = $query->where('tbh.payment_status', 1);
+        $query = $query->whereMonth('tb.booking_date', $param['month']);
+        $query = $query->whereYear('tb.booking_date', $param['year']);
+        $query = $query->groupBy('ft.type')
+            ->select(
+                DB::raw('ft.type, SUM(tb.total_seat) as passengger')
+            )
+            ->get();
+
+        return $query;
     }
 
     public function scopeGetBookByBus($query, $param)

@@ -149,30 +149,35 @@ class AkapMonthlyController extends Controller
         $data['trip_assign_close'] = $daftarAbsensi['trip_assign_close'];
 
         //TABLE
-        $book_seat = Akap::getBookByTripAssign($param);
-        $data['occupancy_rate'] = $this->occupancyByTrasTable($param, $book_seat);
-        $data['daily_occupancy_by_bus'] = $this->dailyOccupancyByBus($param, $book_seat);
+        $data['occupancy_rate'] = $this->occupancyByTrasTable($param);
+        $data['daily_occupancy_by_bus'] = $this->dailyOccupancyByBus($param);
 
         return $data;
     }
 
-    private function dailyOccupancyByBus($param, $book_seat)
+    private function dailyOccupancyByBus($param)
     {
-        $classInfo = $this->classInfoV2($param);
+        $paramForBus = $param;
+        unset($paramForBus['trip_route_group']);
+        unset($paramForBus['trip_group']);
+        unset($paramForBus['trip_assign_group']);
+
+        $dailyBusPassenger = Akap::getDailyBusPassenger($paramForBus);
+        
+        $classInfo = $this->classInfoV2($paramForBus);
 
         $bus_daily = [];
         $lengthDay = cal_days_in_month(CAL_GREGORIAN, $param['month'], $param['year']);
 
-        // Initialize bus_daily array
-        foreach ($classInfo as $ci) {
-            if (!isset($bus_daily[$ci->bus])) {
-                $bus_daily[$ci->bus] = [
-                    'bus' => $ci->bus,
-                    'trip' => '',
+        // Initialize bus_daily array from passenger data
+        foreach ($dailyBusPassenger as $p) {
+            if (!isset($bus_daily[$p->bus_name])) {
+                $bus_daily[$p->bus_name] = [
+                    'bus' => $p->bus_name,
                     'data' => []
                 ];
                 for ($d = 1; $d <= $lengthDay; $d++) {
-                    $bus_daily[$ci->bus]['data'][$d] = [
+                    $bus_daily[$p->bus_name]['data'][$d] = [
                         'date' => $d,
                         'max_seat' => 0,
                         'seat_sale' => 0,
@@ -180,26 +185,11 @@ class AkapMonthlyController extends Controller
                     ];
                 }
             }
+            $bus_daily[$p->bus_name]['data'][$p->day]['seat_sale'] = $p->passengger;
         }
 
-        // Create a map of tras_id to bus name
-        $tras_to_bus = [];
-        foreach ($classInfo as $ci) {
-            $tras_to_bus[$ci->tras_id] = $ci->bus;
-        }
-
-        // Aggregate seat sales by bus and day
-        foreach ($book_seat as $bs) {
-            if (isset($tras_to_bus[$bs->tras_id])) {
-                $bus_name = $tras_to_bus[$bs->tras_id];
-                if (isset($bus_daily[$bus_name]['data'][$bs->date])) {
-                    $bus_daily[$bus_name]['data'][$bs->date]['seat_sale'] += $bs->seat;
-                }
-            }
-        }
-
-        $busOff = Akap::getTemporaryOff($param);
-        $busOn = Akap::getTemporaryOn($param);
+        $busOff = Akap::getTemporaryOff($paramForBus);
+        $busOn = Akap::getTemporaryOn($paramForBus);
 
         // Prepare bus on/off days for faster lookup
         foreach ($busOff as $value) {
@@ -227,15 +217,10 @@ class AkapMonthlyController extends Controller
 
         // Calculate max_seat for each bus for each day
         foreach ($bus_daily as $bus_name => &$bus_data) {
-            $trips = [];
             for ($d = 1; $d <= $lengthDay; $d++) {
                 $daily_max_seat = 0;
                 foreach ($classInfo as $ci) {
                     if ($ci->bus == $bus_name) {
-                        if (!in_array($ci->trip, $trips)) {
-                            $trips[] = $ci->trip;
-                        }
-
                         $is_active_today = false;
                         if ($ci->status == 1) {
                             $is_active_today = true;
@@ -266,7 +251,6 @@ class AkapMonthlyController extends Controller
                     $bus_data['data'][$d]['occupancy'] = number_format($occup, 0) . '%';
                 }
             }
-            $bus_data['trip'] = implode(', ', $trips);
         }
 
         return $bus_daily;
@@ -493,9 +477,10 @@ class AkapMonthlyController extends Controller
         return $data;
     }
 
-    public function occupancyByTrasTable($param, $book_seat)
+    public function occupancyByTrasTable($param)
     {
         $classInfo = Akap::getAkapClassInfoTable($param);
+        $book_seat = Akap::getBookByTripAssign($param);
 
         $tras_seat = array();
 

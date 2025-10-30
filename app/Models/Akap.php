@@ -507,6 +507,50 @@ class Akap extends Model
         return DB::select($sql, $bindings);
     }
 
+    public function scopeGetDailyBusPassenger($query, $param)
+    {
+        $bindings = [
+            $param['month'],
+            $param['year'],
+        ];
+
+        $sql = "
+            SELECT 
+                bus.name AS bus_name,
+                DAY(x.date) as day,
+                SUM(x.total_seat) AS passengger
+            FROM (
+                SELECT 
+                    tb.tras_id AS tras_id,
+                    tb.booking_date AS date,
+                    COUNT(tps.id) AS total_seat
+                FROM tkt_booking tb
+                JOIN tkt_booking_head tbh 
+                    ON tb.booking_code = tbh.booking_code
+                JOIN tkt_passenger_pcs tps 
+                    ON tb.id_no = tps.booking_id
+                WHERE MONTH(tb.booking_date) = ?
+                AND YEAR(tb.booking_date) = ?
+                AND tbh.payment_status = 1
+                AND tps.cancel = 0
+        ";
+
+        $sql .= "
+                GROUP BY tb.tras_id, tb.booking_date
+            ) x
+            JOIN manifest mn 
+                ON mn.trip_assign = x.tras_id 
+                AND mn.trip_date = DATE(x.date)
+            JOIN ops_roadwarrant rw 
+                ON rw.uuid = mn.roadwarrant_uuid
+            JOIN v2_bus bus 
+                ON rw.bus_uuid = bus.uuid
+            GROUP BY bus.name, DAY(x.date)
+        ";
+
+        return DB::select($sql, $bindings);
+    }
+
     public function scopeGetDailySelling($query, $startDate, $endDate)
     {
         $betweenDate = [$startDate, $endDate];

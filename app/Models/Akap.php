@@ -278,6 +278,43 @@ class Akap extends Model
         return $query;
     }
 
+    public function scopeGetAkapClassInfoListWithV2Bus($query, $param)
+    {
+
+        $query = DB::table('trip as tr');
+        if (isset($param['trip_route_group'])) {
+            $query = $query->whereIn('tr.route', $param['trip_route_group']);
+        }
+        $query = $query
+            ->select(
+                'tr.route as trip_route_id',
+                'tr.trip_title as trip',
+                'tras.fleet_registration_id',
+                'tras.status',
+                'tras.id as tras_id',
+                'tras.assign_time',
+                'bus.name as bus',
+                'frt.registration',
+                'ft.id as fleet_type',
+                'ft.type',
+                'ft.total_seat'
+            )
+            ->join('trip_assign AS tras', 'tr.trip_id', '=', 'tras.trip')
+            ->join('fleet_registration AS fr', 'tras.fleet_registration_id', '=', 'fr.id')
+            ->join('fleet_registration_type AS frt', 'fr.reg_no', '=', 'frt.registration')
+            ->join('fleet_type AS ft', 'frt.type', '=', 'ft.id')
+            ->leftJoin('manifest as mn', 'mn.trip_assign', '=', 'tras.id')
+            ->leftJoin('ops_roadwarrant as rw', 'rw.uuid', '=', 'mn.roadwarrant_uuid')
+            ->leftJoin('v2_bus as bus', 'bus.uuid', '=', 'rw.bus_uuid')
+            ->where('tras.status', 1)
+            ->orderBy('tras.status', 'DESC')
+            ->orderBy('tras.id', 'ASC')
+            ->get();
+
+
+        return $query;
+    }
+
     public function scopeGetAkapClassInfoTable($query, $param)
     {
 

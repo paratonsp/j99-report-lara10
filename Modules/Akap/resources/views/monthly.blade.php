@@ -184,6 +184,38 @@ $endYear = date('Y') + 1;
             </div>
         </div>
 
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Daily Occupancy By Bus</p>
+            </div>
+            <div class="col-12 mt-2">
+                <table id="dailyOccupancyByBusTable" class="table table-bordered table-striped dailyOccupancyByBusTable nowrap">
+                    <thead>
+                        <tr id="dailyOccupancyByBusDate">
+                            <th rowspan="2" colspan="1">
+                                Armada
+                            </th>
+                        </tr>
+                        <tr id="dailyOccupancyByBusDetail">
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($daily_occupancy_by_bus as $key => $item)
+                        <tr>
+                            <td>{{ $item['bus'] }}</td>
+                            @foreach ($item['data'] as $key => $itemData)
+                                <td>{{ $itemData['occupancy'] }}</td>
+                                <td>{{ $itemData['seat_sale'] }}</td>
+                                <td>{{ $itemData['max_seat'] }}</td>  
+                            @endforeach
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="mb-5">
             <div class="col-12 incomeSection">
                 <p>Perbandingan Titik Naik</p>
@@ -409,6 +441,46 @@ $endYear = date('Y') + 1;
             ],
             "buttons": ["copy", "csv", "excel", "pdf", "print"]
         }).buttons().container().appendTo('#occupancyRateTable_wrapper .col-md-6:eq(0)');
+
+        var dailyOccupancyByBusDate = "";
+        for (var j = 0; j < days; j++) {
+            var d = j + 1;
+            dailyOccupancyByBusDate += '<th rowspan="1" colspan="3">' + d + '</th>';
+        }
+
+        var dailyOccupancyByBusDetail = "";
+        for (var j = 0; j < days; j++) {
+            var d = j + 1;
+            dailyOccupancyByBusDetail += '<th>% Occup</th>';
+            dailyOccupancyByBusDetail += '<th>Ticket Sold</th>';
+            dailyOccupancyByBusDetail += '<th>Max Seat</th>';
+        }
+
+        $("#dailyOccupancyByBusDate").append(dailyOccupancyByBusDate);
+        $("#dailyOccupancyByBusDetail").append(dailyOccupancyByBusDetail);
+
+        $('#dailyOccupancyByBusTable').DataTable({
+            "scrollX": true,
+            "scrollY": '70vh',
+            "responsive": false,
+            "paging": false,
+            "ordering": true,
+            "searching": true,
+            "fixedColumns": {
+                "leftColumns": 1
+            },
+            "scrollCollapse": true,
+            "columnDefs": [{
+                    "className": "dt-center",
+                    "targets": "_all"
+                },
+                {
+                    "targets": 1,
+                    "width": 1
+                }
+            ],
+            "buttons": ["copy", "csv", "excel", "pdf", "print"]
+        }).buttons().container().appendTo('#dailyOccupancyByBusTable_wrapper .col-md-6:eq(0)');
     });
 </script>
 @endsection

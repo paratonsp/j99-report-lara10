@@ -22,127 +22,136 @@ class AkapMonthlyController extends Controller
         $year = ($request->has('year')) ? $request->input('year') : date('Y');
         $trip = $request->input('trip');
 
-        $cacheKey = "akap_monthly_report_{$year}_{$month}_{$trip}";
+        if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
+            $cacheKey = "akap_monthly_report_{$year}_{$month}_{$trip}";
 
-        $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
-            $trip_route_grouped = null;
-            $trip_route_group = null;
-            $trip_group = null;
-            $trip_assign_group = null;
-            $total_days = Carbon::now()->month($month)->daysInMonth;
-
-            $trip_route_grouped = $routeGroupResult = Akap::getTripRouteGroup();
-
-            if ($request->has('trip')) {
-                $trip_route_group = $trip_route_grouped = Akap::getTripRouteGroup($trip);
-                if (isset($trip_route_group)) {
-                    $temp_route = array();
-                    $rx = explode(",", $trip_route_group[0]->route_x);
-                    foreach ($rx as $rxv) {
-                        array_push($temp_route, $rxv);
-                    }
-                    $ry = explode(",", $trip_route_group[0]->route_y);
-                    foreach ($ry as $ryv) {
-                        array_push($temp_route, $ryv);
-                    }
-                    $trip_route_grouped[0]->name = $trip_route_group[0]->name_x;
-                    $trip_route_grouped[0]->route = $temp_route;
-                    $trip_route_group = $temp_route;
-
-                }
-            } else {
-                foreach ($trip_route_grouped as $value) {
-                    $temp_route = array();
-                    $rx = explode(",", $value->route_x);
-                    foreach ($rx as $rxv) {
-                        array_push($temp_route, $rxv);
-                    }
-                    $ry = explode(",", $value->route_y);
-                    foreach ($ry as $ryv) {
-                        array_push($temp_route, $ryv);
-                    }
-                    $value->name = $value->name_x;
-                    $value->route = $temp_route;
-
-                }
-            }
-
-            //PARAMETER
-            $param = [
-                'trip_route_grouped' => $trip_route_grouped,
-                'trip_route_group' => $trip_route_group,
-                'trip_group' => $trip_group,
-                'trip_assign_group' => $trip_assign_group,
-                'total_days' => $total_days,
-                'month' => $month,
-                'year' => $year,
-            ];
-
-
-            $target = Akap::getTarget($param);
-            if ($target->isEmpty()) {
-                $target = "Target belum disetting";
-            } else {
-                $target = Number::currency($target[0]->target, 'IDR');
-            }
-
-            $classInfo = $this->classInfo($param);
-
-            $param['trip_group'] = Akap::getTripGroup($param)->toArray();
-            $param['trip_assign_group'] = Akap::getTripAssignGroup($param)->toArray();
-
-            $seatAndClassBookingData = Akap::getSeatAndClassBookingData($param);
-
-            //CHART DATA
-            $occRoute = $this->occupancyByRouteChart($param, $classInfo, $seatAndClassBookingData);
-            $data['occupancy_by_route_bar'] = $occRoute['bar_chart'];
-            $data['occupancy_by_route_doughnut'] = $occRoute['doughnut_chart'];
-
-            $occBus = $this->occupancyByBusChart($param,$classInfo);
-            $data['occupancy_by_bus_bar'] = $occBus['bar_chart'];
-            $data['occupancy_by_bus_doughnut'] = $occBus['doughnut_chart'];
-
-            $occClass = $this->occupancyByClassChart($param, $classInfo, $seatAndClassBookingData);
-            $data['occupancy_by_class_bar'] = $occClass['bar_chart'];
-            $data['occupancy_by_class_doughnut'] = $occClass['doughnut_chart'];
-
-            $tickSupport = $this->ticketingSupportChart($param);
-            $data['ticketing_support_bar'] = $tickSupport['bar_chart'];
-            $data['ticketing_support_pie_chart'] = $tickSupport['pie_chart'];
-
-            $data['daily_passengger'] = $this->dailyPassenggerChart($param, $seatAndClassBookingData);
-            $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param, $classInfo, $seatAndClassBookingData);
-
-            $perbBulanLalu = $this->perbandinganBulanLaluChart($param);
-            $data['perbandingan_bulan_lalu_chart'] = $perbBulanLalu['chart'];
-            $data['perbandingan_bulan_lalu_current_month'] = $perbBulanLalu['current_month'];
-            $data['perbandingan_bulan_lalu_last_month'] = $perbBulanLalu['last_month'];
-
-            $perbTitikNaik = $this->perbandinganTitikNaik($param, $seatAndClassBookingData);
-            $data['perbandingan_titik_naik_departure_bar_chart'] = $perbTitikNaik['departure_bar_chart'];
-            $data['perbandingan_titik_naik_arrival_bar_chart'] = $perbTitikNaik['arrival_bar_chart'];
-            $data['perbandingan_titik_naik_departure_doughnut_chart'] = $perbTitikNaik['departure_doughnut_chart'];
-            $data['perbandingan_titik_naik_arrival_doughnut_chart'] = $perbTitikNaik['arrival_doughnut_chart'];
-
-
-            //DATA
-            $data['income'] = $perbBulanLalu['current_month']['income'];
-            $data['selling'] = Number::currency(Akap::getSelling($param), 'IDR');
-            $data['target'] = $target;
-            $data['route_group'] = $routeGroupResult;
-            $data['title'] = 'REPORT AKAP BULANAN';
-
-            $daftarAbsensi = $this->daftarAbsensiBus($param);
-            $data['trip_assign_open'] = $daftarAbsensi['trip_assign_open'];
-            $data['trip_assign_close'] = $daftarAbsensi['trip_assign_close'];
-
-            //TABLE
-            $data['occupancy_rate'] = $this->occupancyByTrasTable($param);
-
-            return $data;
-        });
+            $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
+                return $this->getReportData($request, $month, $year, $trip);
+            });
+        } else {
+            $data = $this->getReportData($request, $month, $year, $trip);
+        }
 
         return view('akap::monthly', $data);
+    }
+
+    public function getReportData(Request $request, $month, $year, $trip)
+    {
+        $trip_route_grouped = null;
+        $trip_route_group = null;
+        $trip_group = null;
+        $trip_assign_group = null;
+        $total_days = Carbon::now()->month($month)->daysInMonth;
+
+        $trip_route_grouped = $routeGroupResult = Akap::getTripRouteGroup();
+
+        if ($request->has('trip')) {
+            $trip_route_group = $trip_route_grouped = Akap::getTripRouteGroup($trip);
+            if (isset($trip_route_group)) {
+                $temp_route = array();
+                $rx = explode(",", $trip_route_group[0]->route_x);
+                foreach ($rx as $rxv) {
+                    array_push($temp_route, $rxv);
+                }
+                $ry = explode(",", $trip_route_group[0]->route_y);
+                foreach ($ry as $ryv) {
+                    array_push($temp_route, $ryv);
+                }
+                $trip_route_grouped[0]->name = $trip_route_group[0]->name_x;
+                $trip_route_grouped[0]->route = $temp_route;
+                $trip_route_group = $temp_route;
+
+            }
+        } else {
+            foreach ($trip_route_grouped as $value) {
+                $temp_route = array();
+                $rx = explode(",", $value->route_x);
+                foreach ($rx as $rxv) {
+                    array_push($temp_route, $rxv);
+                }
+                $ry = explode(",", $value->route_y);
+                foreach ($ry as $ryv) {
+                    array_push($temp_route, $ryv);
+                }
+                $value->name = $value->name_x;
+                $value->route = $temp_route;
+
+            }
+        }
+
+        //PARAMETER
+        $param = [
+            'trip_route_grouped' => $trip_route_grouped,
+            'trip_route_group' => $trip_route_group,
+            'trip_group' => $trip_group,
+            'trip_assign_group' => $trip_assign_group,
+            'total_days' => $total_days,
+            'month' => $month,
+            'year' => $year,
+        ];
+
+
+        $target = Akap::getTarget($param);
+        if ($target->isEmpty()) {
+            $target = "Target belum disetting";
+        } else {
+            $target = Number::currency($target[0]->target, 'IDR');
+        }
+
+        $classInfo = $this->classInfo($param);
+
+        $param['trip_group'] = Akap::getTripGroup($param)->toArray();
+        $param['trip_assign_group'] = Akap::getTripAssignGroup($param)->toArray();
+
+        $seatAndClassBookingData = Akap::getSeatAndClassBookingData($param);
+
+        //CHART DATA
+        $occRoute = $this->occupancyByRouteChart($param, $classInfo, $seatAndClassBookingData);
+        $data['occupancy_by_route_bar'] = $occRoute['bar_chart'];
+        $data['occupancy_by_route_doughnut'] = $occRoute['doughnut_chart'];
+
+        $occBus = $this->occupancyByBusChart($param,$classInfo);
+        $data['occupancy_by_bus_bar'] = $occBus['bar_chart'];
+        $data['occupancy_by_bus_doughnut'] = $occBus['doughnut_chart'];
+
+        $occClass = $this->occupancyByClassChart($param, $classInfo, $seatAndClassBookingData);
+        $data['occupancy_by_class_bar'] = $occClass['bar_chart'];
+        $data['occupancy_by_class_doughnut'] = $occClass['doughnut_chart'];
+
+        $tickSupport = $this->ticketingSupportChart($param);
+        $data['ticketing_support_bar'] = $tickSupport['bar_chart'];
+        $data['ticketing_support_pie_chart'] = $tickSupport['pie_chart'];
+
+        $data['daily_passengger'] = $this->dailyPassenggerChart($param, $seatAndClassBookingData);
+        $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param, $classInfo, $seatAndClassBookingData);
+
+        $perbBulanLalu = $this->perbandinganBulanLaluChart($param);
+        $data['perbandingan_bulan_lalu_chart'] = $perbBulanLalu['chart'];
+        $data['perbandingan_bulan_lalu_current_month'] = $perbBulanLalu['current_month'];
+        $data['perbandingan_bulan_lalu_last_month'] = $perbBulanLalu['last_month'];
+
+        $perbTitikNaik = $this->perbandinganTitikNaik($param, $seatAndClassBookingData);
+        $data['perbandingan_titik_naik_departure_bar_chart'] = $perbTitikNaik['departure_bar_chart'];
+        $data['perbandingan_titik_naik_arrival_bar_chart'] = $perbTitikNaik['arrival_bar_chart'];
+        $data['perbandingan_titik_naik_departure_doughnut_chart'] = $perbTitikNaik['departure_doughnut_chart'];
+        $data['perbandingan_titik_naik_arrival_doughnut_chart'] = $perbTitikNaik['arrival_doughnut_chart'];
+
+
+        //DATA
+        $data['income'] = $perbBulanLalu['current_month']['income'];
+        $data['selling'] = Number::currency(Akap::getSelling($param), 'IDR');
+        $data['target'] = $target;
+        $data['route_group'] = $routeGroupResult;
+        $data['title'] = 'REPORT AKAP BULANAN';
+
+        $daftarAbsensi = $this->daftarAbsensiBus($param);
+        $data['trip_assign_open'] = $daftarAbsensi['trip_assign_open'];
+        $data['trip_assign_close'] = $daftarAbsensi['trip_assign_close'];
+
+        //TABLE
+        $data['occupancy_rate'] = $this->occupancyByTrasTable($param);
+
+        return $data;
     }
 
     public function nullChart($type)

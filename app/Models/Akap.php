@@ -378,7 +378,7 @@ class Akap extends Model
             $query->whereIn('tb.tras_id', $param['trip_assign_group']);
         }
 
-        return $query->select('tb.trip_route_id', 'ft.type', 'tb.pickup_trip_location', 'tb.drop_trip_location')->get();
+        return $query->select('tb.trip_route_id', 'ft.type', 'tb.pickup_trip_location', 'tb.drop_trip_location', DB::raw('DAY(tb.booking_date) as date'))->get();
     }
 
     public function scopeGetBookByBus($query, $param)

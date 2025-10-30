@@ -106,7 +106,7 @@ class AkapMonthlyController extends Controller
         $data['ticketing_support_bar'] = $tickSupport['bar_chart'];
         $data['ticketing_support_pie_chart'] = $tickSupport['pie_chart'];
 
-        $data['daily_passengger'] = $this->dailyPassenggerChart($param);
+        $data['daily_passengger'] = $this->dailyPassenggerChart($param, $seatAndClassBookingData);
         $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param, $classInfo, $seatAndClassBookingData);
 
         $perbBulanLalu = $this->perbandinganBulanLaluChart($param);
@@ -631,12 +631,17 @@ class AkapMonthlyController extends Controller
         return $data;
     }
 
-    public function dailyPassenggerChart($param)
+    public function dailyPassenggerChart($param, $seatAndClassBookingData)
     {
-        if (empty($param['trip_route_group'])) {
-            $daily_passengger = Akap::getDailyPassengerCounts($param);
-            $keys = $daily_passengger->keys()->toArray();
-            $values = $daily_passengger->values()->toArray();
+        $daysInMonth = Carbon::now()->month($param['month'])->daysInMonth;
+        $keys = range(1, $daysInMonth);
+
+        if (empty($param['trip_route_group'])) { 
+            $daily_passengger = $seatAndClassBookingData->groupBy('date')->map(function ($group) {
+                return $group->count();
+            });
+
+            $values = collect($keys)->map(fn($day) => $daily_passengger->get($day, 0))->toArray();
 
             $data = Chartjs::build()
                 ->name("DailyPassengger")
@@ -657,15 +662,13 @@ class AkapMonthlyController extends Controller
             $trip_route_details = $param['trip_route_grouped'][0];
             $route_x_ids = explode(",", $trip_route_details->route_x);
             $route_y_ids = explode(",", $trip_route_details->route_y);
-            $all_routes = array_merge($route_x_ids, $route_y_ids);
 
-            $dailyDataByRoute = Akap::getDailyPassengerCountsByRoute($param, $all_routes);
-
-            $route_x_book = $dailyDataByRoute->whereIn('trip_route_id', $route_x_ids)->groupBy('date')->mapWithKeys(fn($day, $date) => [$date => $day->sum('seat')]);
-            $route_y_book = $dailyDataByRoute->whereIn('trip_route_id', $route_y_ids)->groupBy('date')->mapWithKeys(fn($day, $date) => [$date => $day->sum('seat')]);
-
-            $daysInMonth = Carbon::now()->month($param['month'])->daysInMonth;
-            $keys = range(1, $daysInMonth);
+            $route_x_book = $seatAndClassBookingData->whereIn('trip_route_id', $route_x_ids)->groupBy('date')->map(function ($group) {
+                return $group->count();
+            });
+            $route_y_book = $seatAndClassBookingData->whereIn('trip_route_id', $route_y_ids)->groupBy('date')->map(function ($group) {
+                return $group->count();
+            });
 
             $values_x = collect($keys)->map(fn($day) => $route_x_book->get($day, 0))->toArray();
             $values_y = collect($keys)->map(fn($day) => $route_y_book->get($day, 0))->toArray();

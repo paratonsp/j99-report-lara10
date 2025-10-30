@@ -26,6 +26,8 @@ class AkapMonthlyController extends Controller
         $trip_assign_group = null;
         $total_days = Carbon::now()->month($month)->daysInMonth;
 
+        $trip_route_grouped = $routeGroupResult = Akap::getTripRouteGroup();
+
         if ($request->has('trip')) {
             $trip = $request->input('trip');
             $trip_route_group = $trip_route_grouped = Akap::getTripRouteGroup($trip);
@@ -45,7 +47,6 @@ class AkapMonthlyController extends Controller
 
             }
         } else {
-            $trip_route_grouped = Akap::getTripRouteGroup();
             foreach ($trip_route_grouped as $value) {
                 $temp_route = array();
                 $rx = explode(",", $value->route_x);
@@ -124,7 +125,7 @@ class AkapMonthlyController extends Controller
         $data['income'] = $perbBulanLalu['current_month']['income'];
         $data['selling'] = Number::currency(Akap::getSelling($param), 'IDR');
         $data['target'] = $target;
-        $data['route_group'] = Akap::getTripRouteGroup();
+        $data['route_group'] = $routeGroupResult;
         $data['title'] = 'REPORT AKAP BULANAN';
 
         $daftarAbsensi = $this->daftarAbsensiBus($param);

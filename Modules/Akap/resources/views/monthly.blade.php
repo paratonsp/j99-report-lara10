@@ -129,6 +129,40 @@ $endYear = date('Y') + 1;
             </div>
         </div>
 
+        @if (!empty($daily_occupancy_by_bus))
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Daily Occupancy By Bus</p>
+            </div>
+            <div class="col-12 mt-2">
+                <table id="dailyOccupancyByBusTable" class="table table-bordered table-striped dailyOccupancyByBusTable nowrap">
+                    <thead>
+                        <tr id="dailyOccupancyByBusDate">
+                            <th rowspan="2" colspan="1">
+                                Armada
+                            </th>
+                        </tr>
+                        <tr id="dailyOccupancyByBusDetail">
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($daily_occupancy_by_bus as $key => $item)
+                        <tr>
+                            <td>{{ $item['bus'] }}</td>
+                            @foreach ($item['data'] as $key => $itemData)
+                                <td>{{ $itemData['occupancy'] }}</td>
+                                <td>{{ $itemData['seat_sale'] }}</td>
+                                <td>{{ $itemData['max_seat'] }}</td>  
+                            @endforeach
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
         <div class="row mb-5">
             <div class="col-12 incomeSection">
                 <p>Occupancy By Class</p>
@@ -172,38 +206,6 @@ $endYear = date('Y') + 1;
                         <tr>
                             <td>{{ $item['bus'] }}</td>
                             <td>{{ $item['trip'] }}</td>
-                            @foreach ($item['data'] as $key => $itemData)
-                                <td>{{ $itemData['occupancy'] }}</td>
-                                <td>{{ $itemData['seat_sale'] }}</td>
-                                <td>{{ $itemData['max_seat'] }}</td>  
-                            @endforeach
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="row mb-5">
-            <div class="col-12 incomeSection">
-                <p>Daily Occupancy By Bus</p>
-            </div>
-            <div class="col-12 mt-2">
-                <table id="dailyOccupancyByBusTable" class="table table-bordered table-striped dailyOccupancyByBusTable nowrap">
-                    <thead>
-                        <tr id="dailyOccupancyByBusDate">
-                            <th rowspan="2" colspan="1">
-                                Armada
-                            </th>
-                        </tr>
-                        <tr id="dailyOccupancyByBusDetail">
-
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($daily_occupancy_by_bus as $key => $item)
-                        <tr>
-                            <td>{{ $item['bus'] }}</td>
                             @foreach ($item['data'] as $key => $itemData)
                                 <td>{{ $itemData['occupancy'] }}</td>
                                 <td>{{ $itemData['seat_sale'] }}</td>
@@ -442,6 +444,7 @@ $endYear = date('Y') + 1;
             "buttons": ["copy", "csv", "excel", "pdf", "print"]
         }).buttons().container().appendTo('#occupancyRateTable_wrapper .col-md-6:eq(0)');
 
+        @if (!empty($daily_occupancy_by_bus))
         var dailyOccupancyByBusDate = "";
         for (var j = 0; j < days; j++) {
             var d = j + 1;
@@ -481,6 +484,7 @@ $endYear = date('Y') + 1;
             ],
             "buttons": ["copy", "csv", "excel", "pdf", "print"]
         }).buttons().container().appendTo('#dailyOccupancyByBusTable_wrapper .col-md-6:eq(0)');
+        @endif
     });
 </script>
 @endsection

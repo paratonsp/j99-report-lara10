@@ -240,7 +240,7 @@ class AkapMonthlyController extends Controller
                         }
                         
                         if ($is_active_today) {
-                            $daily_max_seat += $ci->total_seat;
+                            $daily_max_seat = $ci->total_seat;
                         }
                     }
                 }

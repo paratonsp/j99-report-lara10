@@ -110,9 +110,9 @@ class AkapMonthlyController extends Controller
         $data['occupancy_by_route_bar'] = $occRoute['bar_chart'];
         $data['occupancy_by_route_doughnut'] = $occRoute['doughnut_chart'];
 
-        $occBus = $this->occupancyByBusChart($param,$classInfo);
-        $data['occupancy_by_bus_bar'] = $occBus['bar_chart'];
-        $data['occupancy_by_bus_doughnut'] = $occBus['doughnut_chart'];
+        // $occBus = $this->occupancyByBusChart($param,$classInfo);
+        // $data['occupancy_by_bus_bar'] = $occBus['bar_chart'];
+        // $data['occupancy_by_bus_doughnut'] = $occBus['doughnut_chart'];
 
         $occClass = $this->occupancyByClassChart($param, $classInfo, $seatAndClassBookingData);
         $data['occupancy_by_class_bar'] = $occClass['bar_chart'];

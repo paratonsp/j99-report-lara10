@@ -109,7 +109,7 @@ $endYear = date('Y') + 1;
             </div>
         </div>
 
-        <div class="row mb-5">
+        {{-- <div class="row mb-5">
             <div class="col-12 incomeSection">
                 <p>Occupancy By Bus</p>
             </div>
@@ -127,7 +127,7 @@ $endYear = date('Y') + 1;
                 </div>
                 @endforeach
             </div>
-        </div>
+        </div> --}}
 
         @if (!empty($daily_occupancy_by_bus))
         <div class="row mb-5">

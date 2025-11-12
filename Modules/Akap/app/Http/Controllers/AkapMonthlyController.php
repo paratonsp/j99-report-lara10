@@ -139,7 +139,7 @@ class AkapMonthlyController extends Controller
 
         //DATA
         $data['income'] = $perbBulanLalu['current_month']['income'];
-        $data['selling'] = Number::currency(Akap::getSelling($param), 'IDR');
+        $data['selling'] = Number::currency(Akap::getSelling($param)->total_price_selling, 'IDR');
         $data['target'] = $target;
         $data['route_group'] = $routeGroupResult;
         $data['title'] = 'REPORT AKAP BULANAN';

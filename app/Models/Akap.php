@@ -119,12 +119,17 @@ class Akap extends Model
         $query->whereMonth('tb.date', $param['month'])
             ->whereYear('tb.date', $param['year']);
 
-        return $query->sum(DB::raw("
-            CASE 
-            WHEN tbh.total_price = 0 THEN 0
-            ELSE (tbh.total_price / tbh.total_seat)
-            END
-        "));
+        return $query->select(
+                DB::raw('
+                    SUM(
+                        CASE 
+                            WHEN tbh.total_seat = 0 THEN 0 
+                            ELSE tbh.total_price / tbh.total_seat 
+                        END
+                    ) AS total_price_selling
+                ')
+            )
+            ->first();
     }
 
     public function scopeGetIncome($query, $param)
@@ -214,12 +219,22 @@ class Akap extends Model
         if (!empty($param['trip_group'])) {
             $query->whereIn('tb.trip_id_no', $param['trip_group']);
         }
-
+        
         return $query->select(
-                DB::raw('SUM(tbh.total_price / tbh.total_seat) AS price'),
+                DB::raw('SUM(CASE WHEN tb.adult = 0 THEN 0 ELSE tb.price / tb.adult END) AS price'),
                 DB::raw('COUNT(tpp.id) AS seat')
-            )
-            ->first();
+            )->first();
+
+        // return $query->select(
+        //         'tpp.name',
+        //         'tpp.cancel',
+        //         'tbh.payment_status',
+        //         'tpp.ticket_number',
+        //         'tb.price',
+        //         'tb.adult',
+        //         'tbh.total_price',
+        //         'tb.date'
+        //     )->get();
     }
 
 

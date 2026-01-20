@@ -5,7 +5,7 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login | J99 Trans Admin</title>
-  <link rel="icon" type="image/x-icon" href="{{asset('assets/images/logo/tab_icon.png')}}">
+  <link rel="icon" type="image/x-icon" href="{{asset('assets/images/logo/j99-favicon.png')}}">
 
   <!-- Google Font: Source Sans Pro -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">

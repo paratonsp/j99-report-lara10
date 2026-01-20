@@ -12,7 +12,6 @@ use DateInterval;
 use DatePeriod;
 use Helper;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
 
 class AkapMonthlyController extends Controller
 {
@@ -20,32 +19,15 @@ class AkapMonthlyController extends Controller
     {
         $month = ($request->has('month')) ? $request->input('month') : date('n');
         $year = ($request->has('year')) ? $request->input('year') : date('Y');
-        $trip = $request->input('trip');
 
-        if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
-            $cacheKey = "akap_monthly_report_{$year}_{$month}_{$trip}";
-
-            $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
-                return $this->getReportData($request, $month, $year, $trip);
-            });
-        } else {
-            $data = $this->getReportData($request, $month, $year, $trip);
-        }
-
-        return view('akap::monthly', $data);
-    }
-
-    public function getReportData(Request $request, $month, $year, $trip)
-    {
         $trip_route_grouped = null;
         $trip_route_group = null;
         $trip_group = null;
         $trip_assign_group = null;
         $total_days = Carbon::now()->month($month)->daysInMonth;
 
-        $trip_route_grouped = $routeGroupResult = Akap::getTripRouteGroup();
-
         if ($request->has('trip')) {
+            $trip = $request->input('trip');
             $trip_route_group = $trip_route_grouped = Akap::getTripRouteGroup($trip);
             if (isset($trip_route_group)) {
                 $temp_route = array();
@@ -60,9 +42,13 @@ class AkapMonthlyController extends Controller
                 $trip_route_grouped[0]->name = $trip_route_group[0]->name_x;
                 $trip_route_grouped[0]->route = $temp_route;
                 $trip_route_group = $temp_route;
-
+                unset($trip_route_grouped[0]->name_x);
+                unset($trip_route_grouped[0]->name_y);
+                unset($trip_route_grouped[0]->route_x);
+                unset($trip_route_grouped[0]->route_y);
             }
         } else {
+            $trip_route_grouped = Akap::getTripRouteGroup();
             foreach ($trip_route_grouped as $value) {
                 $temp_route = array();
                 $rx = explode(",", $value->route_x);
@@ -75,7 +61,10 @@ class AkapMonthlyController extends Controller
                 }
                 $value->name = $value->name_x;
                 $value->route = $temp_route;
-
+                unset($value->name_x);
+                unset($value->name_y);
+                unset($value->route_x);
+                unset($value->route_y);
             }
         }
 
@@ -101,12 +90,14 @@ class AkapMonthlyController extends Controller
         $classInfo = $this->classInfo($param);
 
         $param['trip_group'] = Akap::getTripGroup($param)->toArray();
+        $param['trip_group'] = join(',', array_column($param['trip_group'], 'trip_id'));
+        $param['trip_group'] = explode(",", $param['trip_group']);
         $param['trip_assign_group'] = Akap::getTripAssignGroup($param)->toArray();
-
-        $seatAndClassBookingData = Akap::getSeatAndClassBookingData($param);
+        $param['trip_assign_group'] = join(',', array_column($param['trip_assign_group'], 'id'));
+        $param['trip_assign_group'] = explode(",", $param['trip_assign_group']);
 
         //CHART DATA
-        $occRoute = $this->occupancyByRouteChart($param, $classInfo, $seatAndClassBookingData);
+        $occRoute = $this->occupancyByRouteChart($param,$classInfo);
         $data['occupancy_by_route_bar'] = $occRoute['bar_chart'];
         $data['occupancy_by_route_doughnut'] = $occRoute['doughnut_chart'];
 
@@ -114,7 +105,7 @@ class AkapMonthlyController extends Controller
         $data['occupancy_by_bus_bar'] = $occBus['bar_chart'];
         $data['occupancy_by_bus_doughnut'] = $occBus['doughnut_chart'];
 
-        $occClass = $this->occupancyByClassChart($param, $classInfo, $seatAndClassBookingData);
+        $occClass = $this->occupancyByClassChart($param,$classInfo);
         $data['occupancy_by_class_bar'] = $occClass['bar_chart'];
         $data['occupancy_by_class_doughnut'] = $occClass['doughnut_chart'];
 
@@ -122,15 +113,15 @@ class AkapMonthlyController extends Controller
         $data['ticketing_support_bar'] = $tickSupport['bar_chart'];
         $data['ticketing_support_pie_chart'] = $tickSupport['pie_chart'];
 
-        $data['daily_passengger'] = $this->dailyPassenggerChart($param, $seatAndClassBookingData);
-        $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param, $classInfo, $seatAndClassBookingData);
+        $data['daily_passengger'] = $this->dailyPassenggerChart($param);
+        $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param,$classInfo);
 
         $perbBulanLalu = $this->perbandinganBulanLaluChart($param);
         $data['perbandingan_bulan_lalu_chart'] = $perbBulanLalu['chart'];
         $data['perbandingan_bulan_lalu_current_month'] = $perbBulanLalu['current_month'];
         $data['perbandingan_bulan_lalu_last_month'] = $perbBulanLalu['last_month'];
 
-        $perbTitikNaik = $this->perbandinganTitikNaik($param, $seatAndClassBookingData);
+        $perbTitikNaik = $this->perbandinganTitikNaik($param);
         $data['perbandingan_titik_naik_departure_bar_chart'] = $perbTitikNaik['departure_bar_chart'];
         $data['perbandingan_titik_naik_arrival_bar_chart'] = $perbTitikNaik['arrival_bar_chart'];
         $data['perbandingan_titik_naik_departure_doughnut_chart'] = $perbTitikNaik['departure_doughnut_chart'];
@@ -138,10 +129,10 @@ class AkapMonthlyController extends Controller
 
 
         //DATA
-        $data['income'] = $perbBulanLalu['current_month']['income'];
-        $data['selling'] = Number::currency(optional(Akap::getSelling($param))->total_price_selling ?? 0, 'IDR');
+        $data['selling'] = Number::currency(Akap::getSelling($param), 'IDR');
+        $data['income'] = Number::currency(Akap::getIncome($param), 'IDR');
         $data['target'] = $target;
-        $data['route_group'] = $routeGroupResult;
+        $data['route_group'] = Akap::getTripRouteGroup();
         $data['title'] = 'REPORT AKAP BULANAN';
 
         $daftarAbsensi = $this->daftarAbsensiBus($param);
@@ -151,7 +142,7 @@ class AkapMonthlyController extends Controller
         //TABLE
         $data['occupancy_rate'] = $this->occupancyByTrasTable($param);
 
-        return $data;
+        return view('akap::monthly', $data);
     }
 
     public function nullChart($type)
@@ -176,17 +167,11 @@ class AkapMonthlyController extends Controller
         return $data;
     }
 
-    public function totalKeterisianKursiChart($param, $classInfo, $seatAndClassBookingData)
+    public function totalKeterisianKursiChart($param, $classInfo)
     {
 
         $class_info = $classInfo;
-        $book_seat = $seatAndClassBookingData->groupBy('trip_route_id')
-            ->map(function ($group, $trip_route_id) {
-                return (object)[
-                    'trip_route_id' => $trip_route_id,
-                    'passengger' => $group->count()
-                ];
-            });
+        $book_seat = Akap::getBookSeat($param);
 
         $bookedSeat = 0;
         $totalSeat = 0;
@@ -235,16 +220,10 @@ class AkapMonthlyController extends Controller
         return $data;
     }
 
-    public function occupancyByRouteChart($param, $classInfo, $seatAndClassBookingData)
+    public function occupancyByRouteChart($param, $classInfo)
     {
         $class_info = $classInfo;
-        $book_seat = $seatAndClassBookingData->groupBy('trip_route_id')
-            ->map(function ($group, $trip_route_id) {
-                return (object)[
-                    'trip_route_id' => $trip_route_id,
-                    'passengger' => $group->count()
-                ];
-            });
+        $book_seat = Akap::getBookSeat($param);
 
         foreach ($param['trip_route_grouped'] as $value) {
             $value->passengger = 0;
@@ -341,8 +320,9 @@ class AkapMonthlyController extends Controller
             } else {
                 $tras_seat[$value->tras_id]['id'] = $value->tras_id;
                 $tras_seat[$value->tras_id]['max_seat'] = $value->total_seat;
-                $tras_seat[$value->tras_id]['trip'] = $value->trip;
-                $tras_seat[$value->tras_id]['bus'] = $value->bus;
+                $tras_detail = Akap::getTripAssignDetail($value->tras_id);
+                $tras_seat[$value->tras_id]['trip'] = $tras_detail[0]->trip;
+                $tras_seat[$value->tras_id]['bus'] = $tras_detail[0]->bus;
                 $tras_seat[$value->tras_id]['fleet_reg_id'] = $value->fleet_registration_id;
                 $tras_seat[$value->tras_id]['status'] = $value->status;
             }
@@ -555,16 +535,10 @@ class AkapMonthlyController extends Controller
         return $data;
     }
 
-    public function occupancyByClassChart($param, $classInfo, $seatAndClassBookingData)
+    public function occupancyByClassChart($param, $classInfo)
     {
         $class_info = $classInfo;
-        $book_seat = $seatAndClassBookingData->groupBy('type')
-            ->map(function ($group, $type) {
-                return (object)[
-                    'type' => $type,
-                    'passengger' => $group->count()
-                ];
-            });
+        $book_seat = Akap::getBookByClass($param);
 
 
         foreach ($book_seat as $value) {
@@ -647,17 +621,13 @@ class AkapMonthlyController extends Controller
         return $data;
     }
 
-    public function dailyPassenggerChart($param, $seatAndClassBookingData)
+    public function dailyPassenggerChart($param)
     {
-        $daysInMonth = Carbon::now()->month($param['month'])->daysInMonth;
-        $keys = range(1, $daysInMonth);
 
-        if (empty($param['trip_route_group'])) { 
-            $daily_passengger = $seatAndClassBookingData->groupBy('date')->map(function ($group) {
-                return $group->count();
-            });
-
-            $values = collect($keys)->map(fn($day) => $daily_passengger->get($day, 0))->toArray();
+        if ($param['trip_route_group'] == null) {
+            $daily_passengger = Akap::getDailyPassengger($param);
+            $keys = $daily_passengger->keys()->toArray();
+            $values = $daily_passengger->values()->toArray();
 
             $data = Chartjs::build()
                 ->name("DailyPassengger")
@@ -675,19 +645,27 @@ class AkapMonthlyController extends Controller
                     ]
                 ]);
         } else {
-            $trip_route_details = $param['trip_route_grouped'][0];
-            $route_x_ids = explode(",", $trip_route_details->route_x);
-            $route_y_ids = explode(",", $trip_route_details->route_y);
+            $name = $param['trip_route_grouped'][0]->name;
+            $trip_route_group = Akap::getTripRouteGroupByName($name);
+            $route_x = array();
+            $route_y = array();
 
-            $route_x_book = $seatAndClassBookingData->whereIn('trip_route_id', $route_x_ids)->groupBy('date')->map(function ($group) {
-                return $group->count();
-            });
-            $route_y_book = $seatAndClassBookingData->whereIn('trip_route_id', $route_y_ids)->groupBy('date')->map(function ($group) {
-                return $group->count();
-            });
+            $rx = explode(",", $trip_route_group[0]->route_x);
+            foreach ($rx as $val) {
+                array_push($route_x, $val);
+            }
 
-            $values_x = collect($keys)->map(fn($day) => $route_x_book->get($day, 0))->toArray();
-            $values_y = collect($keys)->map(fn($day) => $route_y_book->get($day, 0))->toArray();
+            $ry = explode(",", $trip_route_group[0]->route_y);
+            foreach ($ry as $val) {
+                array_push($route_y, $val);
+            }
+
+            $route_x_book = Akap::getDailyPassenggerByTrip($param, $route_x);
+            $route_y_book = Akap::getDailyPassenggerByTrip($param, $route_y);
+
+            $keys = $route_x_book->keys()->toArray();
+            $values_x = $route_x_book->values()->toArray();
+            $values_y = $route_y_book->values()->toArray();
 
             $data = Chartjs::build()
                 ->name("DailyPassengger")
@@ -696,7 +674,7 @@ class AkapMonthlyController extends Controller
                 ->labels($keys)
                 ->datasets([
                     [
-                        "label" => $trip_route_details->name_x,
+                        "label" => $trip_route_group[0]->name_x,
                         "data" => $values_x,
                         'borderColor' => generateColor(1),
                         'stack' => 'Stack 0',
@@ -704,25 +682,29 @@ class AkapMonthlyController extends Controller
                         'pointBorderWidth' => 4,
                     ],
                     [
-                        "label" => $trip_route_details->name_y,
+                        "label" => $trip_route_group[0]->name_y,
                         "data" => $values_y,
                         'borderColor' => generateColor(6),
                         'stack' => 'Stack 1',
+
                         'fill' => false,
                         'pointBorderWidth' => 4,
                     ]
                 ]);
         }
 
+
+
         return $data;
     }
 
     public function perbandinganBulanLaluChart($param)
     {
-        $current_month_param = $param;
         $current_month = $param['month'];
         $current_year = $param['year'];
-        
+        $last_month = 0;
+        $last_year = 0;
+
         if ($param['month'] == 1) {
             $last_month = 12;
             $last_year = $param['year'] - 1;
@@ -730,26 +712,34 @@ class AkapMonthlyController extends Controller
             $last_month = $param['month'] - 1;
             $last_year = $param['year'];
         }
-        $last_month_param = array_merge($param, ['month' => $last_month, 'year' => $last_year]);
 
-        $current_month_book = Akap::getDailyPassengerCounts($current_month_param);
-        $current_month_summary = Akap::getMonthlyIncomeAndSeats($current_month_param);
+        $current_month_book = Akap::getDailyPassengger($param);
+        $current_month_income = Akap::getDailyPassenggerIncome($param);
 
-        $data['current_month']['month'] = date("F", mktime(0, 0, 0, $current_month, 10));
-        $data['current_month']['income'] = Number::currency($current_month_summary->price ?? 0, 'IDR');
-        $data['current_month']['seat'] = $current_month_summary->seat ?? 0;
+        $data['current_month']['month'] = date("F", mktime(0, 0, 0, $param['month'], 10));
+        $data['current_month']['income'] = number_format($current_month_income[0]->price, 0, '.', ',');
+        $data['current_month']['seat'] = $current_month_income[0]->seat;
 
-        $last_month_book = Akap::getDailyPassengerCounts($last_month_param);
-        $last_month_summary = Akap::getMonthlyIncomeAndSeats($last_month_param);
+        $param['month'] = $last_month;
+        $param['year'] = $last_year;
+        $last_month_book = Akap::getDailyPassengger($param);
+        $last_month_income = Akap::getDailyPassenggerIncome($param);
 
-        $data['last_month']['month'] = date("F", mktime(0, 0, 0, $last_month, 10));
-        $data['last_month']['income'] = Number::currency($last_month_summary->price ?? 0, 'IDR');
-        $data['last_month']['seat'] = $last_month_summary->seat ?? 0;
+        $data['last_month']['month'] = date("F", mktime(0, 0, 0, $param['month'], 10));
+        $data['last_month']['income'] = number_format($last_month_income[0]->price, 0, '.', ',');
+        $data['last_month']['seat'] = $last_month_income[0]->seat;
 
+
+        $keys = array();
         $keys_a = $current_month_book->keys()->toArray();
         $keys_b = $last_month_book->keys()->toArray();
-        $keys = count($keys_a) >= count($keys_b) ? $keys_a : $keys_b;
-        
+
+        if (count($keys_a) >= count($keys_b)) {
+            $keys = $keys_a;
+        } else {
+            $keys = $keys_b;
+        }
+
         $values_current = $current_month_book->values()->toArray();
         $values_last = $last_month_book->values()->toArray();
 
@@ -772,6 +762,7 @@ class AkapMonthlyController extends Controller
                     "data" => $values_last,
                     'borderColor' => generateColor(6),
                     'stack' => 'Stack 1',
+
                     'fill' => false,
                     'pointBorderWidth' => 4,
                 ]
@@ -892,43 +883,57 @@ class AkapMonthlyController extends Controller
         return $data;
     }
 
-    public function perbandinganTitikNaik($param, $seatAndClassBookingData)
+    public function perbandinganTitikNaik($param)
     {
-        $bookingPoints = $seatAndClassBookingData;
-
         //DEPARTURE
-        $departure = $bookingPoints->groupBy('pickup_trip_location')
-            ->map(fn($group) => $group->count())
-            ->sortByDesc(fn($count) => $count);
+        $departure = Akap::getTicketDeparturePointGroup($param);
 
-        $total_departure = $departure->sum();
-        $departureArr = [];
+        $total_departure = 0;
+        foreach ($departure as $value) {
+            $total_departure = $total_departure + $value;
+        }
+
+        $departureArr = array();
+
         foreach ($departure as $key => $value) {
             $departureArr[$key]['name'] = $key;
             $departureArr[$key]['value'] = $value;
-            $percentage = ($total_departure > 0) ? ($value * 100 / $total_departure) : 0;
+            $percentage = ($value * 100 / $total_departure);
             $departureArr[$key]['percentage'] = number_format($percentage, 2, '.', '');
         }
 
-        $departure_label = $departure->keys()->toArray();
-        $departure_value = $departure->values()->toArray();
+        $departure_label = array();
+        $departure_value = array();
+
+        foreach ($departureArr as $value) {
+            $departure_label[] = $value['name'];
+            $departure_value[] = $value['value'];
+        }
 
         //ARRIVAL
-        $arrival = $bookingPoints->groupBy('drop_trip_location')
-            ->map(fn($group) => $group->count())
-            ->sortByDesc(fn($count) => $count);
+        $arrival = Akap::getTicketArrivalPointGroup($param);
 
-        $total_arrival = $arrival->sum();
-        $arrivalArr = [];
+        $total_arrival = 0;
+        foreach ($arrival as $value) {
+            $total_arrival = $total_arrival + $value;
+        }
+
+        $arrivalArr = array();
+
         foreach ($arrival as $key => $value) {
             $arrivalArr[$key]['name'] = $key;
             $arrivalArr[$key]['value'] = $value;
-            $percentage = ($total_arrival > 0) ? ($value * 100 / $total_arrival) : 0;
+            $percentage = ($value * 100 / $total_arrival);
             $arrivalArr[$key]['percentage'] = number_format($percentage, 2, '.', '');
         }
 
-        $arrival_label = $arrival->keys()->toArray();
-        $arrival_value = $arrival->values()->toArray();
+        $arrival_label = array();
+        $arrival_value = array();
+
+        foreach ($arrivalArr as $value) {
+            $arrival_label[] = $value['name'];
+            $arrival_value[] = $value['value'];
+        }
 
         //BAR CHART
         $data['departure_bar_chart'] = Chartjs::build()
@@ -993,12 +998,12 @@ class AkapMonthlyController extends Controller
                 $percentage = $value['percentage'];
                 $label = $value['name'];
                 $class = str_replace(' ', '', $label);
-                $leftPassengger = $total_arrival - $value['value'];
+                $leftPassengger = $total_departure - $value['value'];
                 $data['arrival_doughnut_chart'][$key]['percentage'] = "{$percentage}%";
                 $data['arrival_doughnut_chart'][$key]['label'] = $label;
                 $data['arrival_doughnut_chart'][$key]['chart'] = Chartjs::build()
                     ->name("ArrivalDoughnut{$class}")
-                    ->type('doughnut')
+                    ->type("doughnut")
                     ->size(["width" => 400, "height" => 150])
                     ->labels(['Penumpang', ''])
                     ->datasets([

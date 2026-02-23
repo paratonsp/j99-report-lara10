@@ -1027,11 +1027,11 @@ class AkapMonthlyController extends Controller
         $totalDays = Carbon::now()->month($param['month'])->daysInMonth;
 
         foreach ($classInfo as $value) {
-            if ($value->status == 1) {
+            // if ($value->status == 1) {
                 $value->days_active = $totalDays;
-            } else {
-                $value->days_active = 0;
-            }
+            // } else {
+            //     $value->days_active = 0;
+            // }
         }
 
         // REFERENCE BY TEMPORARY ON & OFF

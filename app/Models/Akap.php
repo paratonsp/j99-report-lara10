@@ -379,7 +379,7 @@ class Akap extends Model
         $query = DB::table('tkt_booking as tb')
             ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
             ->join('tkt_passenger_pcs as tpp', 'tb.id_no', '=', 'tpp.booking_id')
-            ->leftJoin('fleet_type as ft', 'tb.fleet_type', '=', 'ft.id')
+            ->leftJoin('fleet_type as ft', 'tpp.fleet_type', '=', 'ft.id')
             ->where('tbh.payment_status', 1)
             ->where('tpp.cancel', 0)
             ->whereMonth('tb.booking_date', $param['month'])
@@ -393,7 +393,13 @@ class Akap extends Model
             $query->whereIn('tb.tras_id', $param['trip_assign_group']);
         }
 
-        return $query->select('tb.trip_route_id', 'ft.type', 'tb.pickup_trip_location', 'tb.drop_trip_location', DB::raw('DAY(tb.booking_date) as date'))->get();
+        return $query->select(
+            'tb.trip_route_id', 
+            'ft.type', 
+            'tb.pickup_trip_location', 
+            'tb.drop_trip_location', 
+            DB::raw('DAY(tb.booking_date) as date')
+        )->get();
     }
 
     public function scopeGetBookByBus($query, $param)

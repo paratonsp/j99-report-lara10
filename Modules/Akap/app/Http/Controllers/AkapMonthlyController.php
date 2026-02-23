@@ -23,7 +23,7 @@ class AkapMonthlyController extends Controller
         $trip = $request->input('trip');
 
         if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
-            $cacheKey = "akap_monthly_report_{$year}_{$month}_{$trip}";
+            $cacheKey = "akap_monthly_report1_{$year}_{$month}_{$trip}";
 
             $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
                 return $this->getReportData($request, $month, $year, $trip);
@@ -557,7 +557,6 @@ class AkapMonthlyController extends Controller
 
     public function occupancyByClassChart($param, $classInfo, $seatAndClassBookingData)
     {
-        $class_info = $classInfo;
         $book_seat = $seatAndClassBookingData->groupBy('type')
             ->map(function ($group, $type) {
                 return (object)[
@@ -569,7 +568,7 @@ class AkapMonthlyController extends Controller
 
         foreach ($book_seat as $value) {
             $value->max_seat = 0;
-            foreach ($class_info as $item) {
+            foreach ($classInfo as $item) {
                 if ($item->type == $value->type) {
                     $total_days = $item->total_seat * $item->days_active;
                     $value->max_seat = $value->max_seat + $total_days;

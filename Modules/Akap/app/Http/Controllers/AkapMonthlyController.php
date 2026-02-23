@@ -23,7 +23,7 @@ class AkapMonthlyController extends Controller
         $trip = $request->input('trip');
 
         if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
-            $cacheKey = "akap_monthly_rep_{$year}_{$month}_{$trip}";
+            $cacheKey = "akap_monthly_reports_{$year}_{$month}_{$trip}";
 
             $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
                 return $this->getReportData($request, $month, $year, $trip);
@@ -102,6 +102,8 @@ class AkapMonthlyController extends Controller
         }
 
         $classInfo = $this->classInfo($param);
+
+        return $classInfo;
 
         $param['trip_group'] = Akap::getTripGroup($param)->toArray();
         $param['trip_assign_group'] = Akap::getTripAssignGroup($param)->toArray();

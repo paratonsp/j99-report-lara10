@@ -293,6 +293,42 @@ class Akap extends Model
         return $query;
     }
 
+    public function scopeGetTemporaryOnClassInfo($query, $param)
+    {
+        $query = DB::table('trip as tr');
+
+        if (isset($param['trip_route_group'])) {
+            $query = $query->whereIn('tr.route', $param['trip_route_group']);
+        }
+        $query = $query
+            ->select(
+                'tr.route as trip_route_id',
+                'tr.trip_title as trip',
+                'tras.fleet_registration_id',
+                'tras.status',
+                'tras.id as tras_id',
+                'tras.assign_time',
+                'fr.reg_no as bus',
+                'frt.registration',
+                'ft.id as fleet_type',
+                'ft.type',
+                'ft.total_seat',
+                'tat.date',
+                'tat.date_finish',
+            )
+            ->join('trip_assign AS tras', 'tr.trip_id', '=', 'tras.trip')
+            ->join('trip_assign_temporary AS tat', 'tras.id', '=', 'tat.assign_id')
+            ->join('fleet_registration AS fr', 'tras.fleet_registration_id', '=', 'fr.id')
+            ->join('fleet_registration_type AS frt', 'fr.reg_no', '=', 'frt.registration')
+            ->join('fleet_type AS ft', 'frt.type', '=', 'ft.id')
+            ->where('tras.status', 0)
+            ->whereMonth('tat.date', $param['month'])
+            ->whereYear('tat.date', $param['year'])
+            ->get();
+
+        return $query;
+    }
+
     public function scopeGetAkapClassInfoTable($query, $param)
     {
 
@@ -323,6 +359,50 @@ class Akap extends Model
             ->orderBy('tras.id', 'ASC')
             ->get();
 
+
+        return $query;
+    }
+
+    public function scopeGetAkapClassInfoTableWithTemp($query, $param)
+    {
+        $query = DB::table('trip as tr');
+        if (isset($param['trip_route_group'])) {
+            $query = $query->whereIn('tr.route', $param['trip_route_group']);
+        }
+        $query = $query
+            ->select(
+                'tr.route as trip_route_id',
+                'tr.trip_title as trip',
+                'tras.fleet_registration_id',
+                'tras.status',
+                'tras.id as tras_id',
+                'tras.assign_time',
+                'fr.reg_no as bus',
+                'frt.registration',
+                'ft.id as fleet_type',
+                'ft.type',
+                'ft.total_seat',
+            )
+            ->join('trip_assign AS tras', 'tr.trip_id', '=', 'tras.trip')
+            ->join('fleet_registration AS fr', 'tras.fleet_registration_id', '=', 'fr.id')
+            ->join('fleet_registration_type AS frt', 'fr.reg_no', '=', 'frt.registration')
+            ->join('fleet_type AS ft', 'frt.type', '=', 'ft.id')
+            ->where(function ($q) use ($param) {
+                $q->where('tras.status', 1)
+                  ->orWhere(function ($q2) use ($param) {
+                      $q2->where('tras.status', 0)
+                         ->whereExists(function ($sub) use ($param) {
+                             $sub->select(DB::raw(1))
+                                 ->from('trip_assign_temporary as tat')
+                                 ->whereColumn('tat.assign_id', 'tras.id')
+                                 ->whereMonth('tat.date', $param['month'])
+                                 ->whereYear('tat.date', $param['year']);
+                         });
+                  });
+            })
+            ->orderBy('tras.status', 'DESC')
+            ->orderBy('tras.id', 'ASC')
+            ->get();
 
         return $query;
     }
@@ -562,42 +642,6 @@ class Akap extends Model
             'fr.reg_no as bus',
         );
         $query = $query->get();
-
-        return $query;
-    }
-
-    public function scopeGetTemporaryOnClassInfo($query, $param)
-    {
-        $query = DB::table('trip as tr');
-
-        if (isset($param['trip_route_group'])) {
-            $query = $query->whereIn('tr.route', $param['trip_route_group']);
-        }
-        $query = $query
-            ->select(
-                'tr.route as trip_route_id',
-                'tr.trip_title as trip',
-                'tras.fleet_registration_id',
-                'tras.status',
-                'tras.id as tras_id',
-                'tras.assign_time',
-                'fr.reg_no as bus',
-                'frt.registration',
-                'ft.id as fleet_type',
-                'ft.type',
-                'ft.total_seat',
-                'tat.date',
-                'tat.date_finish',
-            )
-            ->join('trip_assign AS tras', 'tr.trip_id', '=', 'tras.trip')
-            ->join('trip_assign_temporary AS tat', 'tras.id', '=', 'tat.assign_id')
-            ->join('fleet_registration AS fr', 'tras.fleet_registration_id', '=', 'fr.id')
-            ->join('fleet_registration_type AS frt', 'fr.reg_no', '=', 'frt.registration')
-            ->join('fleet_type AS ft', 'frt.type', '=', 'ft.id')
-            ->where('tras.status', 0)
-            ->whereMonth('tat.date', $param['month'])
-            ->whereYear('tat.date', $param['year'])
-            ->get();
 
         return $query;
     }

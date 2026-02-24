@@ -32,6 +32,9 @@ class AkapMonthlyTwinController extends Controller
             $data = $this->getReportData($request, $month, $year, $trip);
         }
 
+        echo json_encode($data);
+        return;
+
         return view('akap::monthly', $data);
     }
 

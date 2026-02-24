@@ -23,7 +23,7 @@ class AkapMonthlyController extends Controller
         $trip = $request->input('trip');
 
         if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
-            $cacheKey = "akap_monthly_report_1_{$year}_{$month}_{$trip}";
+            $cacheKey = "akap_monthly_report_2_{$year}_{$month}_{$trip}";
 
             $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
                 return $this->getReportData($request, $month, $year, $trip);
@@ -334,7 +334,7 @@ class AkapMonthlyController extends Controller
 
     public function occupancyByTrasTable($param)
     {
-        $classInfo = Akap::getAkapClassInfoTable($param);
+        $classInfo = Akap::getAkapClassInfoTableWithTemp($param);
 
         $tras_seat = array();
 
@@ -365,32 +365,32 @@ class AkapMonthlyController extends Controller
             }
         }
 
-        $busOff = Akap::getTemporaryOff($param);
-        $busOn = Akap::getTemporaryOn($param);
+        // $busOff = Akap::getTemporaryOff($param);
+        // $busOn = Akap::getTemporaryOn($param);
 
-        foreach ($busOff as $value) {
-            $start = new DateTime($value->date);
-            $end = new DateTime($value->date_finish);
-            $end->modify('+1 day');
-            $period = new DatePeriod($start,new DateInterval('P1D'),$end);
-            $dates = [];
-            foreach ($period as $valueX) {
-                    $dates[] = $valueX->format('j');
-            }
-            $value->days = $dates;
-        }
+        // foreach ($busOff as $value) {
+        //     $start = new DateTime($value->date);
+        //     $end = new DateTime($value->date_finish);
+        //     $end->modify('+1 day');
+        //     $period = new DatePeriod($start,new DateInterval('P1D'),$end);
+        //     $dates = [];
+        //     foreach ($period as $valueX) {
+        //             $dates[] = $valueX->format('j');
+        //     }
+        //     $value->days = $dates;
+        // }
 
-        foreach ($busOn as $value) {
-            $start = new DateTime($value->date);
-            $end = new DateTime($value->date_finish);
-            $end->modify('+1 day');
-            $period = new DatePeriod($start,new DateInterval('P1D'),$end);
-            $dates = [];
-            foreach ($period as $valueX) {
-                $dates[] = $valueX->format('j');
-            }
-            $value->days = $dates;
-        }
+        // foreach ($busOn as $value) {
+        //     $start = new DateTime($value->date);
+        //     $end = new DateTime($value->date_finish);
+        //     $end->modify('+1 day');
+        //     $period = new DatePeriod($start,new DateInterval('P1D'),$end);
+        //     $dates = [];
+        //     foreach ($period as $valueX) {
+        //         $dates[] = $valueX->format('j');
+        //     }
+        //     $value->days = $dates;
+        // }
 
         $book_seat = Akap::getBookByTripAssign($param);
         foreach ($book_seat as $value) {

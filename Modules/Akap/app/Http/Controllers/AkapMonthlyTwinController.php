@@ -23,7 +23,7 @@ class AkapMonthlyTwinController extends Controller
         $trip = $request->input('trip');
 
         if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
-            $cacheKey = "akap_monthly_repr_{$year}_{$month}_{$trip}";
+            $cacheKey = "akap_monthly_repr1_{$year}_{$month}_{$trip}";
 
             $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
                 return $this->getReportData($request, $month, $year, $trip);
@@ -104,6 +104,8 @@ class AkapMonthlyTwinController extends Controller
         $param['trip_assign_group'] = Akap::getTripAssignGroup($param)->toArray();
 
         $seatAndClassBookingData = Akap::getSeatAndClassBookingData($param);
+
+        return $seatAndClassBookingData;
 
         //CHART DATA
         $occRoute = $this->occupancyByRouteChart($param, $classInfo, $seatAndClassBookingData);

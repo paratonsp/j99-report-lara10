@@ -236,14 +236,14 @@ class Akap extends Model
 
         foreach ($getData as $key => $value) {
             $sumSeat++;
-            $month = date('n', strtotime($value->date));
+            $yearMonth = date('Y-n', strtotime($value->date));
             if ($value->tp_price) {
                 $price = $value->tp_price;
             } else {
                 $price = intval($value->tb_price) / intval($value->friends);
             }
             $sumPrice += $price;
-            $monthlyPrice[$month] = ($monthlyPrice[$month] ?? 0) + $price;
+            $monthlyPrice[$yearMonth] = ($monthlyPrice[$yearMonth] ?? 0) + $price;
         }
 
         $result['seat'] = $sumSeat;

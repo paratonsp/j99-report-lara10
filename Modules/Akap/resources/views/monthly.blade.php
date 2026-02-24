@@ -85,9 +85,10 @@ $endYear = date('Y') + 1;
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @forelse ($monthly_price as $month_num => $price)
+                                    @forelse ($monthly_price as $year_month => $price)
+                                    @php [$yr, $mn] = explode('-', $year_month) @endphp
                                     <tr>
-                                        <td>{{ date("F", mktime(0, 0, 0, $month_num, 1)) }}</td>
+                                        <td>{{ date("F", mktime(0, 0, 0, $mn, 1)) }} {{ $yr }}</td>
                                         <td class="text-right">{{ Number::currency($price, 'IDR') }}</td>
                                     </tr>
                                     @empty

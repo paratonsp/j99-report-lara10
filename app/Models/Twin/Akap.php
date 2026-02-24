@@ -223,7 +223,7 @@ class Akap extends Model
         $getData = $query->select(
             'tb.booking_code',
             'tpp.ticket_number',
-            'tb.adult as friend',
+            'tb.adult as friends',
             'tb.price as tb_price',
             'tpp.price as tp_price',
         )->get();
@@ -232,9 +232,12 @@ class Akap extends Model
         $sumPrice = 0;
 
         foreach ($getData as $key => $value) {
+            $sumSeat++;
             if ($value->tp_price) {
-                $sumSeat++;
                 $sumPrice += $value->tp_price;
+            } else {
+                $singlePrice = intval($value->tp_price) / intval($value->friends); 
+                $sumPrice += $singlePrice;
             }
         }
 

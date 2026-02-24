@@ -108,7 +108,6 @@ class AkapMonthlyTwinController extends Controller
 
         $seatAndClassBookingData = Akap::getSeatAndClassBookingData($param);
 
-        $res['seatAndClassBookingData'] = $seatAndClassBookingData;
         $res['classInfo'] = $classInfo;
 
         return $res;
@@ -1071,7 +1070,20 @@ class AkapMonthlyTwinController extends Controller
             }
         }
 
-        
+        // ADD TEMPORARILY OPEN BUSES (status=0 with trip_assign_temporary records)
+        $tempOnClassInfo = Akap::getTemporaryOnClassInfo($param);
+        $tempOnGrouped = collect($tempOnClassInfo)->groupBy('tras_id');
+        foreach ($tempOnGrouped as $trasId => $group) {
+            $entry = clone $group->first();
+            $entry->days_active = 0;
+            foreach ($group as $tempRecord) {
+                $dateFrom = Carbon::parse($tempRecord->date);
+                $dateTo = Carbon::parse($tempRecord->date_finish);
+                $entry->days_active += $dateFrom->diffInDays($dateTo) + 1;
+            }
+            $classInfo->push($entry);
+        }
+
         // REFERENCE BY BOOK
 
         // $temp_assign = array();

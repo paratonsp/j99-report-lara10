@@ -236,7 +236,7 @@ class Akap extends Model
             if ($value->tp_price) {
                 $sumPrice += $value->tp_price;
             } else {
-                $singlePrice = intval($value->tp_price) / intval($value->friends); 
+                $singlePrice = intval($value->tb_price) / intval($value->friends); 
                 $sumPrice += $singlePrice;
             }
         }

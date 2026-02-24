@@ -223,6 +223,7 @@ class Akap extends Model
         return $query->select(
             'tb.booking_code',
             'tpp.ticket_number',
+            'tb.adult as friend',
             'tb.price as tb_price',
             'tpp.price as tp_price',
                 // DB::raw('SUM(CASE WHEN tb.adult = 0 THEN 0 ELSE tb.price / tb.adult END) AS price'),

@@ -108,7 +108,10 @@ class AkapMonthlyTwinController extends Controller
 
         $seatAndClassBookingData = Akap::getSeatAndClassBookingData($param);
 
-        return $seatAndClassBookingData;
+        $res['seatAndClassBookingData'] = $seatAndClassBookingData;
+        $res['classInfo'] = $classInfo;
+
+        return $res;
 
         //CHART DATA
         $occRoute = $this->occupancyByRouteChart($param, $classInfo, $seatAndClassBookingData);

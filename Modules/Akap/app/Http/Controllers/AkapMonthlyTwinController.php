@@ -737,10 +737,20 @@ class AkapMonthlyTwinController extends Controller
         }
         $last_month_param = array_merge($param, ['month' => $last_month, 'year' => $last_year]);
 
+        $sumSeat = 0;
+        $sumPrice = 0;
+
         $current_month_book = Akap::getDailyPassengerCounts($current_month_param);
         $current_month_summary = Akap::getMonthlyIncomeAndSeats($current_month_param);
 
-        return $current_month_summary;
+        foreach ($current_month_summary as $key => $value) {
+            if ($value->tp_price) {
+                $sumSeat++;
+                $sumPrice += $value->tp_price;
+            }
+        }
+
+        return $sumPrice;
 
         $data['current_month']['month'] = date("F", mktime(0, 0, 0, $current_month, 10));
         $data['current_month']['income'] = Number::currency($current_month_summary->price ?? 0, 'IDR');

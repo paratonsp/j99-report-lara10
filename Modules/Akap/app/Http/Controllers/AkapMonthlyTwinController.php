@@ -334,7 +334,7 @@ class AkapMonthlyTwinController extends Controller
 
     public function occupancyByTrasTable($param)
     {
-        $classInfo = Akap::getAkapClassInfoTable($param);
+        $classInfo = Akap::getAkapClassInfoTableWithTemp($param);
 
         $tras_seat = array();
 
@@ -342,19 +342,6 @@ class AkapMonthlyTwinController extends Controller
             if (array_key_exists($value->tras_id, $tras_seat)) {
                 $tras_seat[$value->tras_id]['max_seat'] = $tras_seat[$value->tras_id]['max_seat'] + $value->total_seat;
             } else {
-                $tras_seat[$value->tras_id]['id'] = $value->tras_id;
-                $tras_seat[$value->tras_id]['max_seat'] = $value->total_seat;
-                $tras_seat[$value->tras_id]['trip'] = $value->trip;
-                $tras_seat[$value->tras_id]['bus'] = $value->bus;
-                $tras_seat[$value->tras_id]['fleet_reg_id'] = $value->fleet_registration_id;
-                $tras_seat[$value->tras_id]['status'] = $value->status;
-            }
-        }
-
-        // ADD TEMPORARILY OPEN BUSES (status=0 with trip_assign_temporary records)
-        $tempOnClassInfo = Akap::getTemporaryOnClassInfo($param);
-        foreach ($tempOnClassInfo as $value) {
-            if (!array_key_exists($value->tras_id, $tras_seat)) {
                 $tras_seat[$value->tras_id]['id'] = $value->tras_id;
                 $tras_seat[$value->tras_id]['max_seat'] = $value->total_seat;
                 $tras_seat[$value->tras_id]['trip'] = $value->trip;

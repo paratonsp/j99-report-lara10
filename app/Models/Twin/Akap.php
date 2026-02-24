@@ -221,6 +221,8 @@ class Akap extends Model
         }
         
         $getData = $query->select(
+            'tb.booking_date',
+            'tb.date',
             'tb.booking_code',
             'tpp.ticket_number',
             'tb.adult as friends',
@@ -230,19 +232,23 @@ class Akap extends Model
 
         $sumSeat = 0;
         $sumPrice = 0;
+        $monthlyPrice = [];
 
         foreach ($getData as $key => $value) {
             $sumSeat++;
+            $month = date('n', strtotime($value->date));
             if ($value->tp_price) {
-                $sumPrice += $value->tp_price;
+                $price = $value->tp_price;
             } else {
-                $singlePrice = intval($value->tb_price) / intval($value->friends); 
-                $sumPrice += $singlePrice;
+                $price = intval($value->tb_price) / intval($value->friends);
             }
+            $sumPrice += $price;
+            $monthlyPrice[$month] = ($monthlyPrice[$month] ?? 0) + $price;
         }
 
         $result['seat'] = $sumSeat;
         $result['price'] = $sumPrice;
+        $result['monthly_price'] = $monthlyPrice;
 
         return $result;
     }

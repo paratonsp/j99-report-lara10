@@ -23,7 +23,7 @@ class AkapMonthlyController extends Controller
         $trip = $request->input('trip');
 
         if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
-            $cacheKey = "akap_monthly_report_4_{$year}_{$month}_{$trip}";
+            $cacheKey = "akap_monthly_report_5_{$year}_{$month}_{$trip}";
 
             $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
                 return $this->getReportData($request, $month, $year, $trip);
@@ -142,6 +142,7 @@ class AkapMonthlyController extends Controller
 
         //DATA
         $data['income'] = $perbBulanLalu['current_month']['income'];
+        $data['monthly_price'] = $perbBulanLalu['current_month']['monthly_price'];
         $data['selling'] = Number::currency(optional(Akap::getSelling($param))->total_price_selling ?? 0, 'IDR');
         $data['target'] = $target;
         $data['route_group'] = $routeGroupResult;
@@ -740,6 +741,7 @@ class AkapMonthlyController extends Controller
         $data['current_month']['month'] = date("F", mktime(0, 0, 0, $current_month, 10));
         $data['current_month']['income'] = Number::currency($current_month_summary['price'] ?? 0, 'IDR');
         $data['current_month']['seat'] = $current_month_summary['seat'] ?? 0;
+        $data['current_month']['monthly_price'] = $current_month_summary['monthly_price'] ?? [];
 
         $last_month_book = Akap::getDailyPassengerCounts($last_month_param);
         $last_month_summary = Akap::getMonthlyIncomeAndSeats($last_month_param);

@@ -32,8 +32,8 @@ class AkapMonthlyTwinController extends Controller
             $data = $this->getReportData($request, $month, $year, $trip);
         // }
 
-        echo json_encode($data);
-        return;
+        // echo json_encode($data);
+        // return;
 
         return view('akap::monthly', $data);
     }
@@ -129,7 +129,6 @@ class AkapMonthlyTwinController extends Controller
         $data['total_keterisian_kursi'] = $this->totalKeterisianKursiChart($param, $classInfo, $seatAndClassBookingData);
 
         $perbBulanLalu = $this->perbandinganBulanLaluChart($param);
-        return $perbBulanLalu;
         $data['perbandingan_bulan_lalu_chart'] = $perbBulanLalu['chart'];
         $data['perbandingan_bulan_lalu_current_month'] = $perbBulanLalu['current_month'];
         $data['perbandingan_bulan_lalu_last_month'] = $perbBulanLalu['last_month'];
@@ -143,6 +142,7 @@ class AkapMonthlyTwinController extends Controller
 
         //DATA
         $data['income'] = $perbBulanLalu['current_month']['income'];
+        $data['monthly_price'] = $perbBulanLalu['current_month']['monthly_price'];
         $data['selling'] = Number::currency(optional(Akap::getSelling($param))->total_price_selling ?? 0, 'IDR');
         $data['target'] = $target;
         $data['route_group'] = $routeGroupResult;
@@ -738,11 +738,10 @@ class AkapMonthlyTwinController extends Controller
         $current_month_book = Akap::getDailyPassengerCounts($current_month_param);
         $current_month_summary = Akap::getMonthlyIncomeAndSeats($current_month_param);
 
-        return $current_month_summary;
-
         $data['current_month']['month'] = date("F", mktime(0, 0, 0, $current_month, 10));
         $data['current_month']['income'] = Number::currency($current_month_summary['price'] ?? 0, 'IDR');
         $data['current_month']['seat'] = $current_month_summary['seat'] ?? 0;
+        $data['current_month']['monthly_price'] = $current_month_summary['monthly_price'] ?? [];
 
         $last_month_book = Akap::getDailyPassengerCounts($last_month_param);
         $last_month_summary = Akap::getMonthlyIncomeAndSeats($last_month_param);

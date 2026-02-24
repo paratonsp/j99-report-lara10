@@ -56,10 +56,50 @@ $endYear = date('Y') + 1;
 
         <div class="row">
             <div class="col-lg-8 col-12 incomeSection mb-3 mt-3">
-                <p>Total Tiket Berangkat:</p>
+                <p>Total Tiket Berangkat:
+                    <button type="button" class="btn btn-sm btn-outline-secondary ml-2" data-toggle="modal" data-target="#monthlyPriceModal">
+                        Detail
+                    </button>
+                </p>
                 <p><strong>{{ $income }}</strong></p>
                 <br>
                 <p style="font-size: 1em;">Target: <strong>{{ $target }}</strong></p>
+            </div>
+
+            <!-- Monthly Price Modal -->
+            <div class="modal fade" id="monthlyPriceModal" tabindex="-1" role="dialog" aria-labelledby="monthlyPriceModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="monthlyPriceModalLabel">Pendapatan Per Bulan Pembelian</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <table class="table table-bordered table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Bulan</th>
+                                        <th class="text-right">Total Pendapatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($monthly_price as $month_num => $price)
+                                    <tr>
+                                        <td>{{ date("F", mktime(0, 0, 0, $month_num, 1)) }}</td>
+                                        <td class="text-right">{{ Number::currency($price, 'IDR') }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="2" class="text-center">Tidak ada data</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="col-lg-8 col-12 incomeSection mb-5">
                 <p>Total Penjualan Tiket:</p>

@@ -23,7 +23,7 @@ class AkapMonthlyController extends Controller
         $trip = $request->input('trip');
 
         if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
-            $cacheKey = "akap_monthly_repr_{$year}_{$month}_{$trip}";
+            $cacheKey = "akap_monthly_report_1_{$year}_{$month}_{$trip}";
 
             $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
                 return $this->getReportData($request, $month, $year, $trip);
@@ -31,6 +31,9 @@ class AkapMonthlyController extends Controller
         } else {
             $data = $this->getReportData($request, $month, $year, $trip);
         }
+
+        // echo json_encode($data);
+        // return;
 
         return view('akap::monthly', $data);
     }
@@ -1036,34 +1039,42 @@ class AkapMonthlyController extends Controller
 
         // REFERENCE BY TEMPORARY ON & OFF
 
-        $busOff = Akap::getTemporaryOff($param);
-        $busOn = Akap::getTemporaryOn($param);
+        // $busOff = Akap::getTemporaryOff($param);
+        // $busOn = Akap::getTemporaryOn($param);
 
-        foreach ($busOff as $value) {
-            $dateFrom=Carbon::parse($value->date);
-            $dateTo=Carbon::parse($value->date_finish);
-            $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
+        // foreach ($busOff as $value) {
+        //     $dateFrom=Carbon::parse($value->date);
+        //     $dateTo=Carbon::parse($value->date_finish);
+        //     $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
 
-            foreach ($classInfo as $valueX) {
-                if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
-                    $valueX->days_active = $valueX->days_active - $value->count_days;
-                }
-            }
+        //     foreach ($classInfo as $valueX) {
+        //         if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
+        //             $valueX->days_active = $valueX->days_active - $value->count_days;
+        //         }
+        //     }
+        // }
+
+        // foreach ($busOn as $value) {
+        //     $dateFrom=Carbon::parse($value->date);
+        //     $dateTo=Carbon::parse($value->date_finish);
+        //     $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
+
+        //     foreach ($classInfo as $valueX) {
+        //         if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
+        //             $valueX->days_active = $valueX->days_active + $value->count_days;
+        //         }
+        //     }
+        // }
+
+        // ADD TEMPORARILY OPEN BUSES (status=0 with trip_assign_temporary records)
+        $tempOnClassInfo = Akap::getTemporaryOnClassInfo($param);
+        foreach ($tempOnClassInfo as $value) {
+            $dateFrom = Carbon::parse($value->date);
+            $dateTo = Carbon::parse($value->date_finish);
+            $value->days_active = $dateFrom->diffInDays($dateTo) + 1;
+            $classInfo->push($value);
         }
 
-        foreach ($busOn as $value) {
-            $dateFrom=Carbon::parse($value->date);
-            $dateTo=Carbon::parse($value->date_finish);
-            $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
-
-            foreach ($classInfo as $valueX) {
-                if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
-                    $valueX->days_active = $valueX->days_active + $value->count_days;
-                }
-            }
-        }
-
-        
         // REFERENCE BY BOOK
 
         // $temp_assign = array();

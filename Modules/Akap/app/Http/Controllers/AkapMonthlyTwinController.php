@@ -1044,8 +1044,6 @@ class AkapMonthlyTwinController extends Controller
         $busOff = Akap::getTemporaryOff($param);
         $busOn = Akap::getTemporaryOn($param);
 
-        return $busOn;
-
         foreach ($busOff as $value) {
             $dateFrom=Carbon::parse($value->date);
             $dateTo=Carbon::parse($value->date_finish);
@@ -1071,7 +1069,8 @@ class AkapMonthlyTwinController extends Controller
         }
 
         // ADD TEMPORARILY OPEN BUSES (status=0 with trip_assign_temporary records)
-        $tempOnClassInfo = $busOn;
+        $tempOnClassInfo = Akap::getTemporaryOnClassInfo($param);
+        return $tempOnClassInfo;
         $tempOnGrouped = collect($tempOnClassInfo)->groupBy('tras_id');
         foreach ($tempOnGrouped as $trasId => $group) {
             $entry = clone $group->first();

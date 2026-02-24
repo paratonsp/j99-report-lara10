@@ -1044,6 +1044,8 @@ class AkapMonthlyTwinController extends Controller
         $busOff = Akap::getTemporaryOff($param);
         $busOn = Akap::getTemporaryOn($param);
 
+        return $busOn;
+
         foreach ($busOff as $value) {
             $dateFrom=Carbon::parse($value->date);
             $dateTo=Carbon::parse($value->date_finish);

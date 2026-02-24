@@ -365,32 +365,32 @@ class AkapMonthlyTwinController extends Controller
             }
         }
 
-        // $busOff = Akap::getTemporaryOff($param);
-        // $busOn = Akap::getTemporaryOn($param);
+        $busOff = Akap::getTemporaryOff($param);
+        $busOn = Akap::getTemporaryOn($param);
 
-        // foreach ($busOff as $value) {
-        //     $start = new DateTime($value->date);
-        //     $end = new DateTime($value->date_finish);
-        //     $end->modify('+1 day');
-        //     $period = new DatePeriod($start,new DateInterval('P1D'),$end);
-        //     $dates = [];
-        //     foreach ($period as $valueX) {
-        //             $dates[] = $valueX->format('j');
-        //     }
-        //     $value->days = $dates;
-        // }
+        foreach ($busOff as $value) {
+            $start = new DateTime($value->date);
+            $end = new DateTime($value->date_finish);
+            $end->modify('+1 day');
+            $period = new DatePeriod($start,new DateInterval('P1D'),$end);
+            $dates = [];
+            foreach ($period as $valueX) {
+                    $dates[] = $valueX->format('j');
+            }
+            $value->days = $dates;
+        }
 
-        // foreach ($busOn as $value) {
-        //     $start = new DateTime($value->date);
-        //     $end = new DateTime($value->date_finish);
-        //     $end->modify('+1 day');
-        //     $period = new DatePeriod($start,new DateInterval('P1D'),$end);
-        //     $dates = [];
-        //     foreach ($period as $valueX) {
-        //         $dates[] = $valueX->format('j');
-        //     }
-        //     $value->days = $dates;
-        // }
+        foreach ($busOn as $value) {
+            $start = new DateTime($value->date);
+            $end = new DateTime($value->date_finish);
+            $end->modify('+1 day');
+            $period = new DatePeriod($start,new DateInterval('P1D'),$end);
+            $dates = [];
+            foreach ($period as $valueX) {
+                $dates[] = $valueX->format('j');
+            }
+            $value->days = $dates;
+        }
 
         $book_seat = Akap::getBookByTripAssign($param);
         foreach ($book_seat as $value) {

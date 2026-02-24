@@ -32,9 +32,6 @@ class AkapMonthlyTwinController extends Controller
             $data = $this->getReportData($request, $month, $year, $trip);
         // }
 
-        echo json_encode($data);
-        return;
-
         return view('akap::monthly', $data);
     }
 
@@ -107,8 +104,6 @@ class AkapMonthlyTwinController extends Controller
         $param['trip_assign_group'] = Akap::getTripAssignGroup($param)->toArray();
 
         $seatAndClassBookingData = Akap::getSeatAndClassBookingData($param);
-
-        return $classInfo;
 
         //CHART DATA
         $occRoute = $this->occupancyByRouteChart($param, $classInfo, $seatAndClassBookingData);
@@ -1041,32 +1036,32 @@ class AkapMonthlyTwinController extends Controller
 
         // REFERENCE BY TEMPORARY ON & OFF
 
-        $busOff = Akap::getTemporaryOff($param);
-        $busOn = Akap::getTemporaryOn($param);
+        // $busOff = Akap::getTemporaryOff($param);
+        // $busOn = Akap::getTemporaryOn($param);
 
-        foreach ($busOff as $value) {
-            $dateFrom=Carbon::parse($value->date);
-            $dateTo=Carbon::parse($value->date_finish);
-            $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
+        // foreach ($busOff as $value) {
+        //     $dateFrom=Carbon::parse($value->date);
+        //     $dateTo=Carbon::parse($value->date_finish);
+        //     $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
 
-            foreach ($classInfo as $valueX) {
-                if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
-                    $valueX->days_active = $valueX->days_active - $value->count_days;
-                }
-            }
-        }
+        //     foreach ($classInfo as $valueX) {
+        //         if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
+        //             $valueX->days_active = $valueX->days_active - $value->count_days;
+        //         }
+        //     }
+        // }
 
-        foreach ($busOn as $value) {
-            $dateFrom=Carbon::parse($value->date);
-            $dateTo=Carbon::parse($value->date_finish);
-            $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
+        // foreach ($busOn as $value) {
+        //     $dateFrom=Carbon::parse($value->date);
+        //     $dateTo=Carbon::parse($value->date_finish);
+        //     $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
 
-            foreach ($classInfo as $valueX) {
-                if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
-                    $valueX->days_active = $valueX->days_active + $value->count_days;
-                }
-            }
-        }
+        //     foreach ($classInfo as $valueX) {
+        //         if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
+        //             $valueX->days_active = $valueX->days_active + $value->count_days;
+        //         }
+        //     }
+        // }
 
         // ADD TEMPORARILY OPEN BUSES (status=0 with trip_assign_temporary records)
         $tempOnClassInfo = Akap::getTemporaryOnClassInfo($param);

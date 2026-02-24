@@ -241,8 +241,9 @@ class Akap extends Model
             }
         }
 
-        $result['seat'] = $sumSeat;
-        $result['price'] = $sumPrice;
+        $result = new stdClass();
+        $result->seat = $sumSeat;
+        $result->price = $sumPrice;
 
         return $result;
     }

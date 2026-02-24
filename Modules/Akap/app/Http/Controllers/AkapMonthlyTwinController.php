@@ -32,6 +32,9 @@ class AkapMonthlyTwinController extends Controller
             $data = $this->getReportData($request, $month, $year, $trip);
         // }
 
+        echo json_encode($data);
+        return;
+
         return view('akap::monthly', $data);
     }
 
@@ -104,6 +107,8 @@ class AkapMonthlyTwinController extends Controller
         $param['trip_assign_group'] = Akap::getTripAssignGroup($param)->toArray();
 
         $seatAndClassBookingData = Akap::getSeatAndClassBookingData($param);
+
+        return $seatAndClassBookingData;
 
         //CHART DATA
         $occRoute = $this->occupancyByRouteChart($param, $classInfo, $seatAndClassBookingData);

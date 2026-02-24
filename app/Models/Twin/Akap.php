@@ -434,7 +434,7 @@ class Akap extends Model
             'ft.type', 
             'tb.pickup_trip_location', 
             'tb.drop_trip_location', 
-            'tb.boking_date',
+            'tb.booking_date',
             'tb.booking_code',
             DB::raw('DAY(tb.booking_date) as date')
         )->get();

@@ -1071,7 +1071,7 @@ class AkapMonthlyTwinController extends Controller
         // ADD TEMPORARILY OPEN BUSES (status=0 with trip_assign_temporary records)
         $tempOnClassInfo = Akap::getTemporaryOnClassInfo($param);
         $tempOnGrouped = collect($tempOnClassInfo)->groupBy('tras_id');
-        foreach ($tempOnGrouped as $trasId => $group) {
+        foreach ($tempOnClassInfo as $trasId => $group) {
             $entry = clone $group->first();
             $entry->days_active = 0;
             foreach ($group as $tempRecord) {

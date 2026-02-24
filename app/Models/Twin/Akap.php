@@ -221,9 +221,13 @@ class Akap extends Model
         }
         
         return $query->select(
-                DB::raw('SUM(CASE WHEN tb.adult = 0 THEN 0 ELSE tb.price / tb.adult END) AS price'),
-                DB::raw('COUNT(tpp.id) AS seat')
-            )->first();
+            'tb.booking_code',
+            'tpp.ticket_number',
+            'tb.price',
+            'tpp.price',
+                // DB::raw('SUM(CASE WHEN tb.adult = 0 THEN 0 ELSE tb.price / tb.adult END) AS price'),
+                // DB::raw('COUNT(tpp.id) AS seat')
+            )->get();
 
         // return $query->select(
         //         'tpp.name',

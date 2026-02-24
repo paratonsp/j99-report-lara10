@@ -55,12 +55,14 @@ $endYear = date('Y') + 1;
         </div>
 
         <div class="row">
-            <div class="col-lg-8 col-12 incomeSection mb-3 mt-3">
-                <p>Total Tiket Berangkat:
-                    <button type="button" class="btn btn-sm btn-outline-secondary ml-2" data-toggle="modal" data-target="#monthlyPriceModal">
-                        Detail
-                    </button>
-                </p>
+            <div class="col-lg-8 col-12 incomeSection mb-3 mt-3" style="position: relative;">
+                <button type="button" class="btn btn-sm btn-outline-light btn-detail-monthly" style="position: absolute; top: 1rem; right: 1rem; border-width: 2px; color: #ffffff; font-weight: 700;" data-toggle="modal" data-target="#monthlyPriceModal">
+                    Detail
+                </button>
+                <style>
+                    .btn-detail-monthly:hover { color: #ff0000 !important; }
+                </style>
+                <p>Total Tiket Berangkat:</p>
                 <p><strong>{{ $income }}</strong></p>
                 <br>
                 <p style="font-size: 1em;">Target: <strong>{{ $target }}</strong></p>

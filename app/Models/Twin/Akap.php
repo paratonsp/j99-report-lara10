@@ -364,7 +364,7 @@ class Akap extends Model
         )
             ->join('trip_assign AS tras', 'tr.trip_id', '=', 'tras.trip')
             ->join('trip_assign_temporary AS tat', 'tras.id', '=', 'tat.assign_id')
-            ->where('tras.status', '0')
+            ->where('tras.status', 0)
             ->whereMonth('tat.date', $param['month'])
             ->whereYear('tat.date', $param['year'])
             ->whereMonth('tat.date_finish', $param['month'])

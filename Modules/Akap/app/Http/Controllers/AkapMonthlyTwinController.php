@@ -1077,7 +1077,7 @@ class AkapMonthlyTwinController extends Controller
             foreach ($group as $tempRecord) {
                 $dateFrom = Carbon::parse($tempRecord->date);
                 $dateTo = Carbon::parse($tempRecord->date_finish);
-                $entry->days_active += $dateFrom->diffInDays($dateTo) + 1;
+                $entry->days_active = $dateFrom->diffInDays($dateTo) + 1;
             }
             $classInfo->push($entry);
         }

@@ -220,31 +220,29 @@ class Akap extends Model
             $query->whereIn('tb.trip_id_no', $param['trip_group']);
         }
         
-        return $query->select(
+        $getData = $query->select(
             'tb.booking_code',
             'tpp.ticket_number',
             'tb.adult as friend',
             'tb.price as tb_price',
             'tpp.price as tp_price',
-                // DB::raw('SUM(CASE WHEN tb.adult = 0 THEN 0 ELSE tb.price / tb.adult END) AS price'),
-                // DB::raw('COUNT(tpp.id) AS seat')
-            )->get();
+        )->get();
 
-        // return $query->select(
-        //         'tpp.name',
-        //         'tpp.cancel',
-        //         'tbh.payment_status',
-        //         'tpp.ticket_number',
-        //         'tb.price',
-        //         'tb.adult',
-        //         'tbh.total_price',
-        //         'tb.date'
-        //     )->get();
+        $sumSeat = 0;
+        $sumPrice = 0;
+
+        foreach ($getData as $key => $value) {
+            if ($value->tp_price) {
+                $sumSeat++;
+                $sumPrice += $value->tp_price;
+            }
+        }
+
+        $result['seat'] = $sumSeat;
+        $result['price'] = $sumPrice;
+
+        return $result;
     }
-
-
-
-
 
     public function scopeGetTicketingSupport($query, $param)
     {

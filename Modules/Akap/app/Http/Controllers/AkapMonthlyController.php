@@ -471,6 +471,7 @@ class AkapMonthlyController extends Controller
                 $bus_seat[$value->name]['passengger'] = $value->passengger;
                 $bus_seat[$value->name]['max_seat'] = 0;
                 $bus_seat[$value->name]['tras_id'] = $value->tras_id;
+                $bus_seat[$value->name]['bus_uuid'] = $value->busUuid;
             }
         }
 
@@ -487,13 +488,13 @@ class AkapMonthlyController extends Controller
         }
 
         // MANIFEST COUNT (JUMLAH JALAN)
-        $manifestCounts = Akap::getManifestCountByTras($param);
-        $manifestCountByTras = [];
+        $manifestCounts = Akap::getManifestCountByBus($param);
+        $manifestCountByBus = [];
         foreach ($manifestCounts as $mc) {
-            $manifestCountByTras[$mc->tras_id] = $mc->manifest_count;
+            $manifestCountByBus[$mc->bus_uuid] = $mc->manifest_count;
         }
         foreach ($bus_seat as $key => $valueA) {
-            $bus_seat[$key]['manifest_count'] = $manifestCountByTras[$valueA['tras_id']] ?? 0;
+            $bus_seat[$key]['manifest_count'] = $manifestCountByBus[$valueA['bus_uuid']] ?? 0;
         }
 
         $label = array();

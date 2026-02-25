@@ -383,16 +383,17 @@ class Akap extends Model
         return $query;
     }
 
-    public function scopeGetManifestCountByTras($query, $param)
+    public function scopeGetManifestCountByBus($query, $param)
     {
         $query = DB::table('manifest as mn')
+            ->join('ops_roadwarrant as rw', 'rw.uuid', '=', 'mn.roadwarrant_uuid')
             ->select(
-                'mn.trip_assign as tras_id',
+                'rw.bus_uuid',
                 DB::raw('COUNT(mn.uuid) as manifest_count'),
             )
             ->whereMonth('mn.trip_date', $param['month'])
             ->whereYear('mn.trip_date', $param['year'])
-            ->groupBy('mn.trip_assign')
+            ->groupBy('rw.bus_uuid')
             ->get();
 
         return $query;

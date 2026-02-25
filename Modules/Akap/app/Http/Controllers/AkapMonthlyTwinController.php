@@ -486,6 +486,16 @@ class AkapMonthlyTwinController extends Controller
             }
         }
 
+        // MANIFEST COUNT (JUMLAH JALAN)
+        $manifestCounts = Akap::getManifestCountByTras($param);
+        $manifestCountByTras = [];
+        foreach ($manifestCounts as $mc) {
+            $manifestCountByTras[$mc->tras_id] = $mc->manifest_count;
+        }
+        foreach ($bus_seat as $key => $valueA) {
+            $bus_seat[$key]['manifest_count'] = $manifestCountByTras[$valueA['tras_id']] ?? 0;
+        }
+
 
         $label = array();
         $max_seat = array();
@@ -533,6 +543,7 @@ class AkapMonthlyTwinController extends Controller
                 $data['doughnut_chart'][$key]['percentage'] = "{$percentage}%";
                 $data['doughnut_chart'][$key]['label'] = $value['name'];
                 $data['doughnut_chart'][$key]['trip_count'] = $value['trip_count'];
+                $data['doughnut_chart'][$key]['manifest_count'] = $value['manifest_count'];
                 $data['doughnut_chart'][$key]['chart'] = Chartjs::build()
                     ->name("OccupancyByBusDoughnut{$class}")
                     ->type("doughnut")

@@ -167,6 +167,7 @@ $endYear = date('Y') + 1;
                     <p class="mb-0"><strong>{{$item['percentage']}}</strong></p>
                     <p class="mb-0">{{$item['label']}}</p>
                     <p class="mb-0">Jumlah Trip: {{$item['trip_count']}}</p>
+                    <p class="mb-0">Jumlah Perjalan: {{$item['manifest_count']}}</p>
                 </div>
                 @endforeach
             </div>

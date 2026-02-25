@@ -521,6 +521,7 @@ class Akap extends Model
 
         $sql = "
             SELECT 
+                bus.uuid as busUuid,
                 bus.name AS name,
                 mn.uuid AS uuid,
                 x.date AS date,

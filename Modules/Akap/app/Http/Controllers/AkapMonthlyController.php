@@ -197,6 +197,31 @@ class AkapMonthlyController extends Controller
                 ];
             });
 
+        // Build off/on day arrays per fleet_registration_id
+        $offDaysByFleet = [];
+        foreach (Akap::getTemporaryOff($param) as $value) {
+            $start = new DateTime($value->date);
+            $end = new DateTime($value->date_finish);
+            $end->modify('+1 day');
+            $period = new DatePeriod($start, new DateInterval('P1D'), $end);
+            foreach ($period as $dt) {
+                $offDaysByFleet[$value->fleet_registration_id][] = (int)$dt->format('j');
+            }
+        }
+
+        $onDaysByFleet = [];
+        foreach (Akap::getTemporaryOn($param) as $value) {
+            $start = new DateTime($value->date);
+            $end = new DateTime($value->date_finish);
+            $end->modify('+1 day');
+            $period = new DatePeriod($start, new DateInterval('P1D'), $end);
+            foreach ($period as $dt) {
+                $onDaysByFleet[$value->fleet_registration_id][] = (int)$dt->format('j');
+            }
+        }
+
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $param['month'], $param['year']);
+
         $bookedSeat = 0;
         $totalSeat = 0;
 
@@ -209,8 +234,19 @@ class AkapMonthlyController extends Controller
 
             foreach ($class_info as $item) {
                 if (in_array($item->trip_route_id, $value->route)) {
-                    $total_days = $item->total_seat * $item->days_active;
-                    $totalSeat = $totalSeat + $total_days;
+                    if ($item->status == 1) {
+                        $offDays = $offDaysByFleet[$item->fleet_registration_id] ?? [];
+                        $activeDays = 0;
+                        for ($day = 1; $day <= $daysInMonth; $day++) {
+                            if (!in_array($day, $offDays)) {
+                                $activeDays++;
+                            }
+                        }
+                        $totalSeat += $item->total_seat * $activeDays;
+                    } else {
+                        $onDays = $onDaysByFleet[$item->fleet_registration_id] ?? [];
+                        $totalSeat += $item->total_seat * count($onDays);
+                    }
                 }
             }
         }

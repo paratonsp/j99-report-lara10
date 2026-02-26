@@ -142,8 +142,13 @@ class AkapMonthlyController extends Controller
 
         //DATA
         $data['income'] = $perbBulanLalu['current_month']['income'];
-        $data['monthly_price'] = $perbBulanLalu['current_month']['monthly_price'];
-        $data['selling'] = Number::currency(optional(Akap::getSelling($param))->total_price_selling ?? 0, 'IDR');
+        $monthlyPrice = $perbBulanLalu['current_month']['monthly_price'];
+        uksort($monthlyPrice, fn($a, $b) => strtotime(str_replace('-', '-01-', $a)) <=> strtotime(str_replace('-', '-01-', $b)));
+        $data['monthly_price'] = $monthlyPrice;
+
+        $sellingData = Akap::getSelling($param);
+        $data['selling'] = Number::currency($sellingData->total_price_selling ?? 0, 'IDR');
+        $data['selling_monthly'] = $sellingData->monthly_price ?? [];
         $data['target'] = $target;
         $data['route_group'] = $routeGroupResult;
         $data['title'] = 'REPORT AKAP BULANAN';

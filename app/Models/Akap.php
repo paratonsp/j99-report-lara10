@@ -116,20 +116,31 @@ class Akap extends Model
             $query->whereIn('tb.trip_id_no', $param['trip_group']);
         }
 
-        $query->whereMonth('tb.date', $param['month'])
-            ->whereYear('tb.date', $param['year']);
-
-        return $query->select(
-                DB::raw('
-                    SUM(
-                        CASE 
-                            WHEN tbh.total_seat = 0 THEN 0 
-                            ELSE tbh.total_price / tbh.total_seat 
-                        END
-                    ) AS total_price_selling
-                ')
+        $getData = $query->whereMonth('tb.date', $param['month'])
+            ->whereYear('tb.date', $param['year'])
+            ->select(
+                'tb.date',
+                'tb.booking_date',
+                DB::raw('CASE WHEN tbh.total_seat = 0 THEN 0 ELSE tbh.total_price / tbh.total_seat END AS price_per_seat'),
             )
-            ->first();
+            ->orderBy('tb.booking_date', 'asc')
+            ->get();
+
+        $totalPriceSelling = 0;
+        $monthlyPrice = [];
+
+        foreach ($getData as $value) {
+            $price = $value->price_per_seat;
+            $totalPriceSelling += $price;
+            $yearMonth = date('Y-n', strtotime($value->booking_date));
+            $monthlyPrice[$yearMonth] = ($monthlyPrice[$yearMonth] ?? 0) + $price;
+        }
+
+        $result = new \stdClass();
+        $result->total_price_selling = $totalPriceSelling;
+        $result->monthly_price = $monthlyPrice;
+
+        return $result;
     }
 
     public function scopeGetIncome($query, $param)

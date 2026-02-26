@@ -104,10 +104,50 @@ $endYear = date('Y') + 1;
                     </div>
                 </div>
             </div>
-            <div class="col-lg-8 col-12 incomeSection mb-5">
+            <div class="col-lg-8 col-12 incomeSection mb-5" style="position: relative;">
+                <button type="button" class="btn btn-sm btn-outline-light btn-detail-monthly" style="position: absolute; top: 1rem; right: 1rem; border-width: 2px; color: #ffffff; font-weight: 700;" data-toggle="modal" data-target="#sellingMonthlyModal">
+                    Detail
+                </button>
                 <p>Total Penjualan Tiket:</p>
                 <p><strong>{{ $selling }}</strong></p>
                 <br>
+            </div>
+
+            <!-- Selling Monthly Modal -->
+            <div class="modal fade" id="sellingMonthlyModal" tabindex="-1" role="dialog" aria-labelledby="sellingMonthlyModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="sellingMonthlyModalLabel">Penjualan Per Bulan Pembelian</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <table class="table table-bordered table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Bulan</th>
+                                        <th class="text-right">Total Penjualan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($selling_monthly as $year_month => $price)
+                                    @php [$yr, $mn] = explode('-', $year_month) @endphp
+                                    <tr>
+                                        <td>{{ date("F", mktime(0, 0, 0, $mn, 1)) }} {{ $yr }}</td>
+                                        <td class="text-right">{{ Number::currency($price, 'IDR') }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="2" class="text-center">Tidak ada data</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="col-lg-4 col-12 mb-5 mt-3 align-content-center">
                 <div class="row col-12">

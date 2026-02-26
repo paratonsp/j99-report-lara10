@@ -385,14 +385,17 @@ class Akap extends Model
 
     public function scopeGetManifestCountByBus($query, $param)
     {
+        $firstOfMonth = sprintf('%04d-%02d-01', $param['year'], $param['month']);
+        $today = date('Y-m-d');
+
         $query = DB::table('manifest as mn')
             ->join('ops_roadwarrant as rw', 'rw.uuid', '=', 'mn.roadwarrant_uuid')
             ->select(
                 'rw.bus_uuid',
                 DB::raw('COUNT(mn.uuid) as manifest_count'),
             )
-            ->whereMonth('mn.trip_date', $param['month'])
-            ->whereYear('mn.trip_date', $param['year'])
+            ->where('mn.trip_date', '>=', $firstOfMonth)
+            ->where('mn.trip_date', '<=', $today)
             ->groupBy('rw.bus_uuid')
             ->get();
 

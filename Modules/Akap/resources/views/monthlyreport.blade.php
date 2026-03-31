@@ -133,18 +133,18 @@ $endYear = date('Y') + 1;
                     </div>
                 </div>
             </div>
-            {{-- <div class="col-lg-4 col-12 mb-5 mt-3 align-content-center">
+            <div class="col-lg-4 col-12 mb-5 mt-3 align-content-center">
                 <div class="row col-12">
                     <div class="col-6 align-content-center m-0 p-0">
-                        <x-chartjs-component :chart="$total_keterisian_kursi['chart']" />
+                        <canvas id="occupancyChart"></canvas>
                     </div>
                     <div class="col-6 align-content-center">
                         <p class="mb-0">Total Keterisian Seat:</p>
-                        <p class="mb-0"><strong>{{ $total_keterisian_kursi['percentage'] }}</strong></p>
-                        <p class="mb-0"><strong>{{ $total_keterisian_kursi['description'] }}</strong></p>
+                        <p class="mb-0"><strong id="total-seat-percentage"></strong></p>
+                        <p class="mb-0"><strong id="total-seat-description"></strong></p>
                     </div>
                 </div>
-            </div> --}}
+            </div>
         </div>
     </div>
 </div>
@@ -231,6 +231,36 @@ $endYear = date('Y') + 1;
 
     console.log(typedata);
 
+    var classInfoGrouped = Object.values(typedata.class_info.reduce(function (acc, item) {
+        var key = item.bus;
+        if (!acc[key]) {
+            acc[key] = {
+                bus: item.bus,
+                trip: item.trip,
+                registration: item.registration,
+                trip_route_id: item.trip_route_id,
+                fleet_registration_id: item.fleet_registration_id,
+                status: item.status,
+                tras_id: item.tras_id,
+                assign_time: item.assign_time,
+                days_active: item.days_active,
+                total_seat: 0,
+                total_seat_month: 0,
+                classes: [],
+            };
+        }
+        acc[key].total_seat += item.total_seat;
+        acc[key].total_seat_month = acc[key].total_seat * acc[key].days_active;
+        acc[key].classes.push({
+            fleet_type: item.fleet_type,
+            type: item.type,
+            total_seat: item.total_seat,
+        });
+        return acc;
+    }, {}));
+
+    console.log(classInfoGrouped);
+
     var incomeTotal = typedata.getTicket.reduce(function (sum, ticket) {
         var price = (ticket.tp_price > 0) ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
         return sum + price;
@@ -293,8 +323,38 @@ $endYear = date('Y') + 1;
         return sum + price;
     }, 0);
 
+    var totalSeatMonthAll = classInfoGrouped.reduce(function (sum, bus) { return sum + bus.total_seat_month; }, 0);
+
     document.getElementById('income-value').textContent = formatIDR(incomeTotal);
     document.getElementById('selling-value').textContent = formatIDR(sellingTotal);
+    var occupancyPercentage = totalSeatMonthAll > 0
+        ? ((typedata.getTicket.length / totalSeatMonthAll) * 100).toFixed(2) + '%'
+        : '0%';
+
+    document.getElementById('total-seat-percentage').textContent = occupancyPercentage;
+
+    var filled = typedata.getTicket.length;
+    var remaining = Math.max(totalSeatMonthAll - filled, 0);
+    new Chart(document.getElementById('occupancyChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Terisi', 'Kosong'],
+            datasets: [{
+                data: [filled, remaining],
+                backgroundColor: ['#ff0000', '#444444'],
+                borderWidth: 0,
+            }],
+        },
+        options: {
+            cutout: '70%',
+            legend: { display: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true },
+            },
+        },
+    });
+    document.getElementById('total-seat-description').textContent = typedata.getTicket.length + ' / ' + totalSeatMonthAll + ' seat bulan ini';
     document.getElementById('target-value').textContent = typedata.target === '-'
         ? 'Target belum disetting'
         : formatIDR(typedata.target);

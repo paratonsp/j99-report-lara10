@@ -12,142 +12,153 @@ $endYear = date('Y') + 1;
 
 <div class="row mb-2">
     <div class="col-12">
-        <div class="row">
-            <div class="col-md-6 col-12 mb-3">
-                <select name="routeGroup" id="routeGroup" class="custom-select">
-                    <option value="">Semua Rute</option>
-                    <?php foreach ($trip_route_grouped as $rg)
-                        if ($trip == ($rg->id)) {
-                            echo "<option value= " . $rg->id . " selected>" . $rg->name_x . "</option>";
-                        } else {
-                            echo "<option value= " . $rg->id . ">" . $rg->name_x . "</option>";
+        {{-- section 1 --}}
+        <div>
+            <div class="row">
+                <div class="col-md-6 col-12 mb-3">
+                    <select name="routeGroup" id="routeGroup" class="custom-select">
+                        <option value="">Semua Rute</option>
+                        <?php foreach ($trip_route_grouped as $rg)
+                            if ($trip == ($rg->id)) {
+                                echo "<option value= " . $rg->id . " selected>" . $rg->name_x . "</option>";
+                            } else {
+                                echo "<option value= " . $rg->id . ">" . $rg->name_x . "</option>";
+                            }
+                        ?>
+                    </select>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <select name="monthPicker" id="monthPicker" class="custom-select">
+                        <?php
+                        for ($mnth = 1; $mnth <= 12; $mnth++) {
+                            $mnthName = date("F", mktime(0, 0, 0, $mnth, 1));
+                            if ($mnth == $month) {
+                                echo "<option value='$mnth' selected>$mnthName</option>";
+                            } else {
+                                echo "<option value='$mnth'>$mnthName</option>";
+                            }
                         }
-                    ?>
-                </select>
+                        ?>
+                    </select>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <select name="yearPicker" id="yearPicker" class="custom-select">
+                        <?php
+                        foreach (range($startYear, $endYear) as $x) {
+                            if ($x == $year) {
+                                echo "<option value='$x' selected>$x</option>";
+                            } else {
+                                echo "<option value='$x'>$x</option>";
+                            }
+                        }
+                        ?>
+                    </select>
+                </div>
             </div>
-            <div class="col-md-3 col-6 mb-3">
-                <select name="monthPicker" id="monthPicker" class="custom-select">
-                    <?php
-                    for ($mnth = 1; $mnth <= 12; $mnth++) {
-                        $mnthName = date("F", mktime(0, 0, 0, $mnth, 1));
-                        if ($mnth == $month) {
-                            echo "<option value='$mnth' selected>$mnthName</option>";
-                        } else {
-                            echo "<option value='$mnth'>$mnthName</option>";
-                        }
-                    }
-                    ?>
-                </select>
-            </div>
-            <div class="col-md-3 col-6 mb-3">
-                <select name="yearPicker" id="yearPicker" class="custom-select">
-                    <?php
-                    foreach (range($startYear, $endYear) as $x) {
-                        if ($x == $year) {
-                            echo "<option value='$x' selected>$x</option>";
-                        } else {
-                            echo "<option value='$x'>$x</option>";
-                        }
-                    }
-                    ?>
-                </select>
+            <div class="row">
+                <div class="col-lg-8 col-12 incomeSection mb-3 mt-3" style="position: relative;">
+                    <button type="button" class="btn btn-sm btn-outline-light btn-detail-monthly" style="position: absolute; top: 1rem; right: 1rem; border-width: 2px; color: #ffffff; font-weight: 700;" data-toggle="modal" data-target="#monthlyPriceModal">
+                        Detail
+                    </button>
+                    <style>
+                        .btn-detail-monthly:hover { color: #ff0000 !important; }
+                    </style>
+                    <p>Total Tiket Berangkat:</p>
+                    <p><strong id="income-value"></strong></p>
+                    <br>
+                    <p style="font-size: 1em;">Target: <strong id="target-value"></strong></p>
+                </div>
+    
+                <!-- Monthly Price Modal -->
+                <div class="modal fade" id="monthlyPriceModal" tabindex="-1" role="dialog" aria-labelledby="monthlyPriceModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="monthlyPriceModalLabel">Pendapatan Per Bulan Pembelian</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <table class="table table-bordered table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Bulan</th>
+                                            <th class="text-right">Total Pendapatan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="monthlyPriceModalBody">
+                                        <tr>
+                                            <td colspan="2" class="text-center">Tidak ada data</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8 col-12 incomeSection mb-5" style="position: relative;">
+                    <button type="button" class="btn btn-sm btn-outline-light btn-detail-monthly" style="position: absolute; top: 1rem; right: 1rem; border-width: 2px; color: #ffffff; font-weight: 700;" data-toggle="modal" data-target="#sellingMonthlyModal">
+                        Detail
+                    </button>
+                    <p>Total Penjualan Tiket:</p>
+                    <p><strong id="selling-value"></strong></p>
+                    <br>
+                </div>
+    
+                <!-- Selling Monthly Modal -->
+                <div class="modal fade" id="sellingMonthlyModal" tabindex="-1" role="dialog" aria-labelledby="sellingMonthlyModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="sellingMonthlyModalLabel">Penjualan Per Bulan Pembelian</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <table class="table table-bordered table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Bulan</th>
+                                            <th class="text-right">Total Penjualan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sellingMonthlyModalBody">
+                                        <tr>
+                                            <td colspan="2" class="text-center">Tidak ada data</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-12 mb-5 mt-3 align-content-center">
+                    <div class="row col-12">
+                        <div class="col-6 align-content-center m-0 p-0">
+                            <canvas id="occupancyChart"></canvas>
+                        </div>
+                        <div class="col-6 align-content-center">
+                            <p class="mb-0">Total Keterisian Seat:</p>
+                            <p class="mb-0"><strong id="total-seat-percentage"></strong></p>
+                            <p class="mb-0"><strong id="total-seat-description"></strong></p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="row">
-            <div class="col-lg-8 col-12 incomeSection mb-3 mt-3" style="position: relative;">
-                <button type="button" class="btn btn-sm btn-outline-light btn-detail-monthly" style="position: absolute; top: 1rem; right: 1rem; border-width: 2px; color: #ffffff; font-weight: 700;" data-toggle="modal" data-target="#monthlyPriceModal">
-                    Detail
-                </button>
-                <style>
-                    .btn-detail-monthly:hover { color: #ff0000 !important; }
-                </style>
-                <p>Total Tiket Berangkat:</p>
-                <p><strong id="income-value"></strong></p>
-                <br>
-                <p style="font-size: 1em;">Target: <strong id="target-value"></strong></p>
+        {{-- section 2  --}}
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Daily Passengger</p>
             </div>
-
-            <!-- Monthly Price Modal -->
-            <div class="modal fade" id="monthlyPriceModal" tabindex="-1" role="dialog" aria-labelledby="monthlyPriceModalLabel" aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="monthlyPriceModalLabel">Pendapatan Per Bulan Pembelian</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <table class="table table-bordered table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Bulan</th>
-                                        <th class="text-right">Total Pendapatan</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="monthlyPriceModalBody">
-                                    <tr>
-                                        <td colspan="2" class="text-center">Tidak ada data</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-8 col-12 incomeSection mb-5" style="position: relative;">
-                <button type="button" class="btn btn-sm btn-outline-light btn-detail-monthly" style="position: absolute; top: 1rem; right: 1rem; border-width: 2px; color: #ffffff; font-weight: 700;" data-toggle="modal" data-target="#sellingMonthlyModal">
-                    Detail
-                </button>
-                <p>Total Penjualan Tiket:</p>
-                <p><strong id="selling-value"></strong></p>
-                <br>
-            </div>
-
-            <!-- Selling Monthly Modal -->
-            <div class="modal fade" id="sellingMonthlyModal" tabindex="-1" role="dialog" aria-labelledby="sellingMonthlyModalLabel" aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="sellingMonthlyModalLabel">Penjualan Per Bulan Pembelian</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <table class="table table-bordered table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Bulan</th>
-                                        <th class="text-right">Total Penjualan</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sellingMonthlyModalBody">
-                                    <tr>
-                                        <td colspan="2" class="text-center">Tidak ada data</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 col-12 mb-5 mt-3 align-content-center">
-                <div class="row col-12">
-                    <div class="col-6 align-content-center m-0 p-0">
-                        <canvas id="occupancyChart"></canvas>
-                    </div>
-                    <div class="col-6 align-content-center">
-                        <p class="mb-0">Total Keterisian Seat:</p>
-                        <p class="mb-0"><strong id="total-seat-percentage"></strong></p>
-                        <p class="mb-0"><strong id="total-seat-description"></strong></p>
-                    </div>
-                </div>
+            <div class="col-12">
+                <canvas id="dailyPassenggerChart"></canvas>
             </div>
         </div>
     </div>
-</div>
 </div>
 
 @endsection
@@ -358,5 +369,38 @@ $endYear = date('Y') + 1;
     document.getElementById('target-value').textContent = typedata.target === '-'
         ? 'Target belum disetting'
         : formatIDR(typedata.target);
+
+    var dailyMap = typedata.getTicket.reduce(function (acc, ticket) {
+        var day = new Date(ticket.departure_date).getDate();
+        acc[day] = (acc[day] || 0) + ticket.passenger_count_tb;
+        return acc;
+    }, {});
+
+    var dailyLabels = Array.from({ length: typedata.total_days }, function (_, i) { return i + 1; });
+    var dailyData = dailyLabels.map(function (d) { return dailyMap[d] || 0; });
+
+    new Chart(document.getElementById('dailyPassenggerChart'), {
+        type: 'line',
+        data: {
+            labels: dailyLabels,
+            datasets: [{
+                label: 'Penumpang',
+                data: dailyData,
+                borderColor: '#ff0000',
+                borderRadius: 3,
+                fill: false,
+            }],
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+            },
+            scales: {
+                x: { title: { display: true, text: 'Tanggal' } },
+                y: { beginAtZero: true, title: { display: true, text: 'Penumpang' }, ticks: { stepSize: 1 } },
+            },
+        },
+    });
 </script>
 @endsection

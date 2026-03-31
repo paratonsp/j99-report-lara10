@@ -158,6 +158,17 @@ $endYear = date('Y') + 1;
                 <canvas id="dailyPassenggerChart"></canvas>
             </div>
         </div>
+
+        {{-- section 3 --}}
+        <div class="row mb-5" <?php if (isset($trip)) echo "hidden" ?>>
+            <div class="col-12 incomeSection">
+                <p>Occupancy By Route</p>
+            </div>
+            <div class="col-12 mb-3">
+                <canvas id="occupancyByRouteBarChart"></canvas>
+            </div>
+            <div class="row col-12 justify-content-center" id="occupancyByRouteDoughnutContainer"></div>
+        </div>
     </div>
 </div>
 
@@ -401,6 +412,92 @@ $endYear = date('Y') + 1;
                 y: { beginAtZero: true, title: { display: true, text: 'Penumpang' }, ticks: { stepSize: 1 } },
             },
         },
+    });
+
+    // Section 3: Occupancy By Route
+    var routeTicketMap = typedata.getTicket.reduce(function (acc, ticket) {
+        acc[ticket.trip_route_id] = (acc[ticket.trip_route_id] || 0) + ticket.passenger_count_tb;
+        return acc;
+    }, {});
+
+    var routeLabels = [];
+    var routeCounts = [];
+    var routeCapacities = [];
+    typedata.trip_route_grouped.forEach(function (rg) {
+        var routeIds = rg.route.map(Number);
+        var count = routeIds.reduce(function (sum, routeId) {
+            return sum + (routeTicketMap[routeId] || 0);
+        }, 0);
+        var capacity = typedata.class_info.reduce(function (sum, ci) {
+            return routeIds.indexOf(ci.trip_route_id) !== -1 ? sum + (ci.total_seat * ci.days_active) : sum;
+        }, 0);
+        routeLabels.push(rg.name);
+        routeCounts.push(count);
+        routeCapacities.push(capacity);
+    });
+
+    new Chart(document.getElementById('occupancyByRouteBarChart'), {
+        type: 'bar',
+        data: {
+            labels: routeLabels,
+            datasets: [
+                {
+                    label: 'Sisa',
+                    data: routeCapacities.map(function (cap, i) { return Math.max(cap - routeCounts[i], 0); }),
+                    backgroundColor: '#444444',
+                    borderRadius: 3,
+                },
+                {
+                    label: 'Terisi',
+                    data: routeCounts,
+                    backgroundColor: '#ff0000',
+                    borderRadius: 3,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: true } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+            },
+        },
+    });
+
+    var doughnutContainer = document.getElementById('occupancyByRouteDoughnutContainer');
+    var doughnutColors = ['#ff0000','#ff6600','#ffcc00','#00cc66','#0066ff','#9900cc','#ff0099','#00ccff'];
+
+    routeLabels.forEach(function (label, i) {
+        var count = routeCounts[i];
+        var capacity = routeCapacities[i];
+        var pct = capacity > 0 ? ((count / capacity) * 100).toFixed(1) + '%' : '0%';
+        var remaining = Math.max(capacity - count, 0);
+        var canvasId = 'routeDoughnut_' + i;
+
+        var col = document.createElement('div');
+        col.className = 'col-4 col-md-3 col-lg-2 mb-3';
+        col.style.justifyItems = 'center';
+        col.innerHTML = '<canvas id="' + canvasId + '"></canvas>'
+            + '<p class="mb-0 text-center"><strong>' + pct + '</strong></p>'
+            + '<p class="mb-0 text-center" style="font-size:0.8em;">' + label + '</p>';
+        doughnutContainer.appendChild(col);
+
+        new Chart(document.getElementById(canvasId), {
+            type: 'doughnut',
+            data: {
+                labels: [label, 'Lainnya'],
+                datasets: [{
+                    data: [count, remaining],
+                    backgroundColor: [doughnutColors[i % doughnutColors.length], '#444444'],
+                    borderWidth: 0,
+                }],
+            },
+            options: {
+                cutout: '70%',
+                legend: false,
+                plugins: { legend: { display: false } },
+            },
+        });
     });
 </script>
 @endsection

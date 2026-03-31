@@ -6,6 +6,8 @@ use Modules\Akap\app\Http\Controllers\AkapDailyController;
 
 use Modules\Akap\app\Http\Controllers\AkapMonthlyTwinController;
 
+use Modules\Akap\app\Http\Controllers\AkapMonthlyReportController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -23,5 +25,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('harian', [AkapDailyController::class, 'index']);
 
         Route::get('bulanan-twin', [AkapMonthlyTwinController::class, 'index']);
+
+        Route::get('monthly', [AkapMonthlyReportController::class, 'index']);
+
     });
 });

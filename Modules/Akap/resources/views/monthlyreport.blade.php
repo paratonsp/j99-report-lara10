@@ -208,6 +208,26 @@ $endYear = date('Y') + 1;
             </div>
         </div>
 
+        {{-- section 7 --}}
+        <div class="mb-5">
+            <div class="col-12 incomeSection">
+                <p>Perbandingan Titik Naik</p>
+            </div>
+            <div class="col-lg-12 col-12 mb-3">
+                <div class="col-12 mt-3">
+                    <p class="subtitle">Titik Naik (Departure)</p>
+                </div>
+                <canvas id="titikNaikChart"></canvas>
+            </div>
+            <hr class="dashed">
+            <div class="col-lg-12 col-12 mb-3">
+                <div class="col-12 mt-3">
+                    <p class="subtitle">Titik Turun (Arrival)</p>
+                </div>
+                <canvas id="titikTurunChart"></canvas>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -215,6 +235,27 @@ $endYear = date('Y') + 1;
 
 @section('script')
 <script>
+    var currentYear = $('#yearPicker').find(':selected').val()
+    var currentMonth = $('#monthPicker').find(':selected').val()
+    var currentTrip = $('#routeGroup').find(":selected").val();
+
+    $('#yearPicker').change(function() {
+        currentYear = $(this).find(':selected').val()
+        var currentUrl = location.href;
+        var url = new URL(currentUrl);
+        url.searchParams.set("year", currentYear);
+        var newUrl = url.href;
+        window.location.href = newUrl;
+    });
+
+    $('#monthPicker').change(function() {
+        currentMonth = $(this).find(':selected').val()
+        var currentUrl = location.href;
+        var url = new URL(currentUrl);
+        url.searchParams.set("month", currentMonth);
+        var newUrl = url.href;
+        window.location.href = newUrl;
+    });
     /**
      * @typedef {Object} TripRouteGrouped
      * @property {number} id
@@ -748,6 +789,60 @@ $endYear = date('Y') + 1;
             ],
             "buttons": ["copy", "csv", "excel", "pdf", "print"]
         }).buttons().container().appendTo('#occupancyRateTable_wrapper .col-md-6:eq(0)');
+
+    // Section 7: Perbandingan Titik Naik
+    var pickupMap = reportData.getTicket.reduce(function (acc, t) {
+        acc[t.pickup_trip_location] = (acc[t.pickup_trip_location] || 0) + t.passenger_count_tb;
+        return acc;
+    }, {});
+
+    var dropMap = reportData.getTicket.reduce(function (acc, t) {
+        acc[t.drop_trip_location] = (acc[t.drop_trip_location] || 0) + t.passenger_count_tb;
+        return acc;
+    }, {});
+
+    var pickupSorted = Object.entries(pickupMap).sort(function (a, b) { return b[1] - a[1]; });
+    var dropSorted = Object.entries(dropMap).sort(function (a, b) { return b[1] - a[1]; });
+
+    new Chart(document.getElementById('titikNaikChart'), {
+        type: 'horizontalBar',
+        data: {
+            labels: pickupSorted.map(function (e) { return e[0]; }),
+            datasets: [{
+                label: 'Penumpang',
+                data: pickupSorted.map(function (e) { return e[1]; }),
+                backgroundColor: '#00cc66',
+                barThickness: 50,
+            }],
+        },
+        options: {
+            responsive: true,
+            legend: { display: false },
+            scales: {
+                xAxes: [{ ticks: { beginAtZero: true, stepSize: 1 } }],
+            },
+        },
+    });
+
+    new Chart(document.getElementById('titikTurunChart'), {
+        type: 'horizontalBar',
+        data: {
+            labels: dropSorted.map(function (e) { return e[0]; }),
+            datasets: [{
+                label: 'Penumpang',
+                data: dropSorted.map(function (e) { return e[1]; }),
+                backgroundColor: '#0066ff',
+                barThickness: 50,
+            }],
+        },
+        options: {
+            responsive: true,
+            legend: { display: false },
+            scales: {
+                xAxes: [{ ticks: { beginAtZero: true, stepSize: 1 } }],
+            },
+        },
+    });
 
 </script>
 @endsection

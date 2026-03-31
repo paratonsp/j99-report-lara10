@@ -224,7 +224,7 @@ $endYear = date('Y') + 1;
      */
 
     /**
-     * @typedef {Object} TypeData
+     * @typedef {Object} reportData
      * @property {TripRouteGrouped[]} trip_route_grouped
      * @property {number[]} trip_group
      * @property {number[]} trip_assign_group
@@ -235,10 +235,11 @@ $endYear = date('Y') + 1;
      * @property {Ticket[]} getTicket
      * @property {Ticket[]} getBuy
      * @property {number} target
+     * @property {{ tras_id: number, fleet_registration_id: number, date: string, date_finish: string, route: number }[]} class_temp_off
      */
 
-    /** @type {TypeData} */
-    var typedata = {
+    /** @type {reportData} */
+    var reportData = {
         trip_route_grouped: @json($trip_route_grouped),
         trip_group: @json($trip_group),
         trip_assign_group: @json($trip_assign_group),
@@ -249,13 +250,29 @@ $endYear = date('Y') + 1;
         getTicket: @json($getTicket ?? []),
         getBuy: @json($getBuy ?? []),
         target: @json($target ?? 0),
+        class_temp_off: @json($class_temp_off ?? []),
     };
 
-    console.log(typedata);
+    console.log(reportData);
 
-    var classInfoGrouped = Object.values(typedata.class_info.reduce(function (acc, item) {
+    var calcDaysOff = function (fleet_registration_id, tras_id) {
+        return reportData.class_temp_off.reduce(function (total, off) {
+            if (off.fleet_registration_id !== fleet_registration_id || off.tras_id !== tras_id) return total;
+            var start = new Date(off.date);
+            var finish = new Date(off.date_finish);
+            var days = 0;
+            for (var d = new Date(start); d <= finish; d.setDate(d.getDate() + 1)) {
+                days++;
+            }
+            return total + days;
+        }, 0);
+    };
+
+    var classInfoGrouped = Object.values(reportData.class_info.reduce(function (acc, item) {
         var key = item.bus;
         if (!acc[key]) {
+            var daysOff = calcDaysOff(item.fleet_registration_id, item.tras_id);
+            var effectiveDays = Math.max(item.days_active - daysOff, 0);
             acc[key] = {
                 bus: item.bus,
                 trip: item.trip,
@@ -265,7 +282,8 @@ $endYear = date('Y') + 1;
                 status: item.status,
                 tras_id: item.tras_id,
                 assign_time: item.assign_time,
-                days_active: item.days_active,
+                days_active: effectiveDays,
+                days_off: daysOff,
                 total_seat: 0,
                 total_seat_month: 0,
                 classes: [],
@@ -283,7 +301,7 @@ $endYear = date('Y') + 1;
 
     console.log(classInfoGrouped);
 
-    var incomeTotal = typedata.getTicket.reduce(function (sum, ticket) {
+    var incomeTotal = reportData.getTicket.reduce(function (sum, ticket) {
         var price = (ticket.tp_price > 0) ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
         return sum + price;
     }, 0);
@@ -298,7 +316,7 @@ $endYear = date('Y') + 1;
 
     var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-    var groupedByBuyMonth = typedata.getTicket.reduce(function (acc, ticket) {
+    var groupedByBuyMonth = reportData.getTicket.reduce(function (acc, ticket) {
         var d = new Date(ticket.buy_date);
         var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
         var price = ticket.tp_price > 0 ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
@@ -319,7 +337,7 @@ $endYear = date('Y') + 1;
         }).join('');
     }
 
-    var groupedByDepartureDateMonthSelling = typedata.getBuy.reduce(function (acc, ticket) {
+    var groupedByDepartureDateMonthSelling = reportData.getBuy.reduce(function (acc, ticket) {
         var d = new Date(ticket.departure_date);
         var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
         var price = ticket.tp_price > 0 ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
@@ -340,7 +358,7 @@ $endYear = date('Y') + 1;
         }).join('');
     }
 
-    var sellingTotal = typedata.getBuy.reduce(function (sum, ticket) {
+    var sellingTotal = reportData.getBuy.reduce(function (sum, ticket) {
         var price = ticket.tp_price > 0 ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
         return sum + price;
     }, 0);
@@ -350,12 +368,12 @@ $endYear = date('Y') + 1;
     document.getElementById('income-value').textContent = formatIDR(incomeTotal);
     document.getElementById('selling-value').textContent = formatIDR(sellingTotal);
     var occupancyPercentage = totalSeatMonthAll > 0
-        ? ((typedata.getTicket.length / totalSeatMonthAll) * 100).toFixed(2) + '%'
+        ? ((reportData.getTicket.length / totalSeatMonthAll) * 100).toFixed(2) + '%'
         : '0%';
 
     document.getElementById('total-seat-percentage').textContent = occupancyPercentage;
 
-    var filled = typedata.getTicket.length;
+    var filled = reportData.getTicket.length;
     var remaining = Math.max(totalSeatMonthAll - filled, 0);
     new Chart(document.getElementById('occupancyChart'), {
         type: 'doughnut',
@@ -376,18 +394,18 @@ $endYear = date('Y') + 1;
             },
         },
     });
-    document.getElementById('total-seat-description').textContent = typedata.getTicket.length + ' / ' + totalSeatMonthAll + ' seat bulan ini';
-    document.getElementById('target-value').textContent = typedata.target === '-'
+    document.getElementById('total-seat-description').textContent = reportData.getTicket.length + ' / ' + totalSeatMonthAll + ' seat bulan ini';
+    document.getElementById('target-value').textContent = reportData.target === '-'
         ? 'Target belum disetting'
-        : formatIDR(typedata.target);
+        : formatIDR(reportData.target);
 
-    var dailyMap = typedata.getTicket.reduce(function (acc, ticket) {
+    var dailyMap = reportData.getTicket.reduce(function (acc, ticket) {
         var day = new Date(ticket.departure_date).getDate();
         acc[day] = (acc[day] || 0) + ticket.passenger_count_tb;
         return acc;
     }, {});
 
-    var dailyLabels = Array.from({ length: typedata.total_days }, function (_, i) { return i + 1; });
+    var dailyLabels = Array.from({ length: reportData.total_days }, function (_, i) { return i + 1; });
     var dailyData = dailyLabels.map(function (d) { return dailyMap[d] || 0; });
 
     new Chart(document.getElementById('dailyPassenggerChart'), {
@@ -415,7 +433,7 @@ $endYear = date('Y') + 1;
     });
 
     // Section 3: Occupancy By Route
-    var routeTicketMap = typedata.getTicket.reduce(function (acc, ticket) {
+    var routeTicketMap = reportData.getTicket.reduce(function (acc, ticket) {
         acc[ticket.trip_route_id] = (acc[ticket.trip_route_id] || 0) + ticket.passenger_count_tb;
         return acc;
     }, {});
@@ -423,12 +441,12 @@ $endYear = date('Y') + 1;
     var routeLabels = [];
     var routeCounts = [];
     var routeCapacities = [];
-    typedata.trip_route_grouped.forEach(function (rg) {
+    reportData.trip_route_grouped.forEach(function (rg) {
         var routeIds = rg.route.map(Number);
         var count = routeIds.reduce(function (sum, routeId) {
             return sum + (routeTicketMap[routeId] || 0);
         }, 0);
-        var capacity = typedata.class_info.reduce(function (sum, ci) {
+        var capacity = reportData.class_info.reduce(function (sum, ci) {
             return routeIds.indexOf(ci.trip_route_id) !== -1 ? sum + (ci.total_seat * ci.days_active) : sum;
         }, 0);
         routeLabels.push(rg.name);

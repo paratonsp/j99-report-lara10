@@ -86,36 +86,6 @@ class AkapMonthly extends Model
             ->get();
     }
 
-    public function scopeGetSeatAndClassBookingData($query, $param)
-    {
-        $query = DB::table('tkt_booking as tb')
-            ->join('tkt_booking_head as tbh', 'tb.booking_code', '=', 'tbh.booking_code')
-            ->join('tkt_passenger_pcs as tpp', 'tb.id_no', '=', 'tpp.booking_id')
-            ->leftJoin('fleet_type as ft', 'tpp.fleet_type', '=', 'ft.id')
-            ->where('tbh.payment_status', 1)
-            ->where('tpp.cancel', 0)
-            ->whereMonth('tb.booking_date', $param['month'])
-            ->whereYear('tb.booking_date', $param['year']);
-
-        if (!empty($param['trip_group'])) {
-            $query->whereIn('tb.trip_id_no', $param['trip_group']);
-        }
-        
-        if (!empty($param['trip_assign_group'])) {
-            $query->whereIn('tb.tras_id', $param['trip_assign_group']);
-        }
-
-        return $query->select(
-            'tb.trip_route_id', 
-            'ft.type', 
-            'tb.pickup_trip_location', 
-            'tb.drop_trip_location', 
-            'tb.booking_date',
-            'tb.booking_code',
-            DB::raw('DAY(tb.booking_date) as date')
-        )->get();
-    }
-
     // =====================
 
     public function scopeGetTripRouteGroupByName($query, $name)
@@ -492,9 +462,11 @@ class AkapMonthly extends Model
             $query = $query->whereIn('tr.route', $param['trip_route_group']);
         }
         $query = $query->select(
+            'tras.id as tras_id',
             'tras.fleet_registration_id',
             'tad.date',
             'tad.date_finish',
+            'tr.route',
         )
             ->join('trip_assign AS tras', 'tr.trip_id', '=', 'tras.trip')
             ->join('trip_assign_dayoff AS tad', 'tras.id', '=', 'tad.assign_id')

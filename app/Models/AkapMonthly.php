@@ -47,10 +47,9 @@ class AkapMonthly extends Model
         return $query->pluck('id');
     }
 
-    public function scopeGetMonthlyTickets($query, $month, $year)
+    public function scopeGetMonthlyTickets($query, $month, $year, $isBuy = false)
     {
-        $query = DB::table('tkt_booking_head as tbh')
-            ->select([
+        return $query->select([
                 'tbh.booking_code',
                 'tpp.ticket_number',
                 'tb.adult AS passenger_count_tb',
@@ -59,22 +58,32 @@ class AkapMonthly extends Model
                 'tpp.seat_number',
                 'tpp.cancel AS tp_cancel',
                 'tb.booking_date as departure_date',
-                'tb.trip_route_id', 
-                'ft.type', 
                 'tb.pickup_trip_location', 
                 'tb.drop_trip_location', 
+                'ft.type', 
+                'ft.id AS type_id', 
+                'tb.trip_route_id',
+                'tb.trip_id_no',
+                'tb.tras_id',
+                'tb.date as buy_date',
             ])
+            ->from('tkt_booking_head as tbh')
             ->join('tkt_booking as tb', 'tb.booking_code', '=', 'tbh.booking_code')
             ->join('tkt_passenger_pcs as tpp', 'tpp.booking_id', '=', 'tb.id_no')
             ->leftJoin('fleet_type as ft', 'tpp.fleet_type', '=', 'ft.id')
             ->where('tbh.payment_status', 1)
             ->where('tpp.cancel', 0)
-            ->whereMonth('tb.booking_date', $month)
-            ->whereYear('tb.booking_date', $year)
+            
+            ->when($isBuy, function ($q) use ($month, $year) {
+                return $q->whereMonth('tb.date', $month)
+                        ->whereYear('tb.date', $year);
+            }, function ($q) use ($month, $year) {
+                return $q->whereMonth('tb.booking_date', $month)
+                        ->whereYear('tb.booking_date', $year);
+            })
+            
             ->orderBy('tbh.id', 'desc')
             ->get();
-
-        return $query;
     }
 
     public function scopeGetSeatAndClassBookingData($query, $param)

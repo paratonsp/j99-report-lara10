@@ -32,9 +32,10 @@ class AkapMonthlyReportController extends Controller
             $data = $this->getReportData($request, $month, $year, $trip);
         // }
 
-        echo json_encode($data);
-        return;
+        // echo json_encode($data);
+        // return;
 
+        $data['title'] = 'REPORT AKAP BULANAN';
         return view('akap::monthlyreport', $data);
     }
 
@@ -85,7 +86,6 @@ class AkapMonthlyReportController extends Controller
         //PARAMETER
         $param = [
             'trip_route_grouped' => $trip_route_grouped,
-            'trip_route_group' => $trip_route_group,
             'trip_group' => $trip_group,
             'trip_assign_group' => $trip_assign_group,
             'total_days' => $total_days,
@@ -96,7 +96,8 @@ class AkapMonthlyReportController extends Controller
 
         $target = AkapMonthly::getTarget($param);
         if ($target->isEmpty()) {
-            $target = "Target belum disetting";
+            $target = "-";
+            // $target = 10000000;
         } else {
             $target = Number::currency($target[0]->target, 'IDR');
         }
@@ -106,10 +107,13 @@ class AkapMonthlyReportController extends Controller
         
         $param['trip_group'] = AkapMonthly::getTripGroup($param)->toArray();
         $param['trip_assign_group'] = AkapMonthly::getTripAssignGroup($param)->toArray();
+        $param['class_info'] = $classInfo;
+        $param['target'] = $target;
         
-        $getTicket = AkapMonthly::getMonthlyTickets($month, $year);
+        $param['getTicket'] = AkapMonthly::getMonthlyTickets($month, $year);
+        $param['getBuy'] = AkapMonthly::getMonthlyTickets($month, $year, true);
 
-        return $getTicket;
+        return $param;
 
         //CHART DATA
         $occRoute = $this->occupancyByRouteChart($param, $classInfo, $seatAndClassBookingData);

@@ -169,6 +169,17 @@ $endYear = date('Y') + 1;
             </div>
             <div class="row col-12 justify-content-center" id="occupancyByRouteDoughnutContainer"></div>
         </div>
+
+        {{-- section 3 --}}
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Occupancy By Class</p>
+            </div>
+            <div class="col-12 mb-3">
+                <canvas id="occupancyByClassBarChart"></canvas>
+            </div>
+            <div class="row col-12 justify-content-center" id="occupancyByClassDoughnutContainer"></div>
+        </div>
     </div>
 </div>
 
@@ -299,7 +310,26 @@ $endYear = date('Y') + 1;
         return acc;
     }, {}));
 
-    console.log(classInfoGrouped);
+    // Group class_info by type, accumulating total_seat * effective days_active
+    var classInfoByType = Object.values(reportData.class_info.reduce(function (acc, item) {
+        var key = item.type;
+        if (!acc[key]) {
+            acc[key] = {
+                type: item.type,
+                fleet_type: item.fleet_type,
+                total_seat: 0,
+                total_seat_month: 0,
+            };
+        }
+        var daysOff = calcDaysOff(item.fleet_registration_id, item.tras_id);
+        var effectiveDays = Math.max(item.days_active - daysOff, 0);
+        acc[key].total_seat += item.total_seat;
+        acc[key].total_seat_month += item.total_seat * effectiveDays;
+        return acc;
+    }, {}));
+
+    console.log('classInfoGrouped',classInfoGrouped);
+    console.log('classInfoByType',classInfoByType);
 
     var incomeTotal = reportData.getTicket.reduce(function (sum, ticket) {
         var price = (ticket.tp_price > 0) ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
@@ -513,6 +543,78 @@ $endYear = date('Y') + 1;
             options: {
                 cutout: '70%',
                 legend: false,
+                plugins: { legend: { display: false } },
+            },
+        });
+    });
+
+    // Section: Occupancy By Class
+    var classTicketMap = reportData.getTicket.reduce(function (acc, ticket) {
+        acc[ticket.type] = (acc[ticket.type] || 0) + ticket.passenger_count_tb;
+        return acc;
+    }, {});
+
+    var classLabels = classInfoByType.map(function (c) { return c.type; });
+    var classCounts = classInfoByType.map(function (c) { return classTicketMap[c.type] || 0; });
+    var classCapacities = classInfoByType.map(function (c) { return c.total_seat_month; });
+
+    new Chart(document.getElementById('occupancyByClassBarChart'), {
+        type: 'bar',
+        data: {
+            labels: classLabels,
+            datasets: [
+                {
+                    label: 'Terisi',
+                    data: classCounts,
+                    backgroundColor: '#ff0000',
+                    borderRadius: 3,
+                },
+                {
+                    label: 'Sisa',
+                    data: classCapacities.map(function (cap, i) { return Math.max(cap - classCounts[i], 0); }),
+                    backgroundColor: '#444444',
+                    borderRadius: 3,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: true } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        },
+    });
+
+    var classColors = ['#ff0000','#ff6600','#ffcc00','#00cc66','#0066ff','#9900cc','#ff0099','#00ccff'];
+    var classDoughnutContainer = document.getElementById('occupancyByClassDoughnutContainer');
+
+    classInfoByType.forEach(function (cls, i) {
+        var count = classTicketMap[cls.type] || 0;
+        var capacity = cls.total_seat_month;
+        var pct = capacity > 0 ? ((count / capacity) * 100).toFixed(1) + '%' : '0%';
+        var remaining = Math.max(capacity - count, 0);
+        var canvasId = 'classDoughnut_' + i;
+
+        var col = document.createElement('div');
+        col.className = 'col-4 col-md-3 col-lg-2 mb-3';
+        col.style.justifyItems = 'center';
+        col.innerHTML = '<canvas id="' + canvasId + '"></canvas>'
+            + '<p class="mb-0 text-center"><strong>' + pct + '</strong></p>'
+            + '<p class="mb-0 text-center" style="font-size:0.8em;">' + cls.type + '</p>';
+        classDoughnutContainer.appendChild(col);
+
+        new Chart(document.getElementById(canvasId), {
+            type: 'doughnut',
+            data: {
+                labels: [cls.type, 'Sisa'],
+                datasets: [{
+                    data: [count, remaining],
+                    backgroundColor: [classColors[i % classColors.length], '#444444'],
+                    borderWidth: 0,
+                }],
+            },
+            options: {
+                cutout: '70%',
+                legend: { display: false },
                 plugins: { legend: { display: false } },
             },
         });

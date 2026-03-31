@@ -62,6 +62,7 @@ $endYear = date('Y') + 1;
                     </button>
                     <style>
                         .btn-detail-monthly:hover { color: #ff0000 !important; }
+                        #occupancyRateTable th, #occupancyRateTable td { padding: 10px 14px; }
                     </style>
                     <p>Total Tiket Berangkat:</p>
                     <p><strong id="income-value"></strong></p>
@@ -170,7 +171,9 @@ $endYear = date('Y') + 1;
             <div class="row col-12 justify-content-center" id="occupancyByRouteDoughnutContainer"></div>
         </div>
 
-        {{-- section 3 --}}
+        {{-- section 4 --}}
+        
+        {{-- section 5 --}}
         <div class="row mb-5">
             <div class="col-12 incomeSection">
                 <p>Occupancy By Class</p>
@@ -180,6 +183,26 @@ $endYear = date('Y') + 1;
             </div>
             <div class="row col-12 justify-content-center" id="occupancyByClassDoughnutContainer"></div>
         </div>
+
+        {{-- section 6 --}}
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Occupancy Rate</p>
+            </div>
+            <div class="col-12 pt-3" style="overflow-x: auto;">
+                <table id="occupancyRateTable" class="table table-bordered" style="white-space: nowrap; font-size: 0.9em;">
+                    <thead id="occupancyRateHead"></thead>
+                    <tbody id="occupancyRateBody"></tbody>
+                </table>
+            </div>
+            <div class="col-12 pt-1">
+                <div class="d-flex align-items-center mb-2">
+                    <span style="display:inline-block; width:32px; height:16px; background-color:#fffde7; border:1px solid #ccc; margin-right:6px;"></span>
+                    <small>Hari Off</small>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -247,6 +270,7 @@ $endYear = date('Y') + 1;
      * @property {Ticket[]} getBuy
      * @property {number} target
      * @property {{ tras_id: number, fleet_registration_id: number, date: string, date_finish: string, route: number }[]} class_temp_off
+     * @property {{ tras_id: number, fleet_registration_id: number, date: string, date_finish: string, route: number }[]} class_temp_on
      */
 
     /** @type {reportData} */
@@ -262,6 +286,7 @@ $endYear = date('Y') + 1;
         getBuy: @json($getBuy ?? []),
         target: @json($target ?? 0),
         class_temp_off: @json($class_temp_off ?? []),
+        class_temp_on: @json($class_temp_on ?? []),
     };
 
     console.log(reportData);
@@ -619,5 +644,78 @@ $endYear = date('Y') + 1;
             },
         });
     });
+
+    // Section 6: Occupancy Rate Table
+    var dateInRange = function (year, month, day, dateStr, dateFinishStr) {
+        var check = new Date(year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0'));
+        return check >= new Date(dateStr) && check <= new Date(dateFinishStr);
+    };
+
+    // status=1: active by default, off when in class_temp_off
+    // status=0: inactive by default, on when in class_temp_on
+    var isBusOffOnDay = function (bus, day) {
+        if (bus.status === 1) {
+            return reportData.class_temp_off.some(function (off) {
+                return off.fleet_registration_id === bus.fleet_registration_id
+                    && off.tras_id === bus.tras_id
+                    && dateInRange(reportData.year, reportData.month, day, off.date, off.date_finish);
+            });
+        } else {
+            // status=0: day is OFF unless it appears in class_temp_on
+            return !reportData.class_temp_on.some(function (on) {
+                return on.fleet_registration_id === bus.fleet_registration_id
+                    && on.tras_id === bus.tras_id
+                    && dateInRange(reportData.year, reportData.month, day, on.date, on.date_finish);
+            });
+        }
+    };
+
+    // tickets per tras_id per day
+    var ticketsByTrasDay = reportData.getTicket.reduce(function (acc, t) {
+        var day = new Date(t.departure_date).getDate();
+        var key = t.tras_id + '_' + day;
+        acc[key] = (acc[key] || 0) + t.passenger_count_tb;
+        return acc;
+    }, {});
+
+    var days = Array.from({ length: reportData.total_days }, function (_, i) { return i + 1; });
+
+    // Build header row 1: day numbers spanning 3 cols each
+    var head = document.getElementById('occupancyRateHead');
+    var isDayAnyOff = function (d) {
+        return classInfoGrouped.some(function (bus) { return isBusOffOnDay(bus, d); });
+    };
+
+    var tr1 = '<tr><th rowspan="2">Armada</th><th rowspan="2">Trip</th>';
+    days.forEach(function (d) {
+        tr1 += '<th colspan="3" class="text-center">' + d + '</th>';
+    });
+    tr1 += '</tr>';
+
+    var tr2 = '<tr>';
+    days.forEach(function () {
+        tr2 += '<th>Max Seat</th><th>% Occup</th><th>Ticket Sold</th>';
+    });
+    tr2 += '</tr>';
+    head.innerHTML = tr1 + tr2;
+
+    // Build body rows: one per bus
+    var tbody = document.getElementById('occupancyRateBody');
+    tbody.innerHTML = classInfoGrouped.map(function (bus) {
+        var row = '<tr><td>' + bus.bus + '</td><td>' + bus.trip + '</td>';
+        days.forEach(function (d) {
+            var off = isBusOffOnDay(bus, d);
+            var maxSeat = off ? 0 : bus.total_seat;
+            var sold = ticketsByTrasDay[bus.tras_id + '_' + d] || 0;
+            var pct = maxSeat > 0 ? ((sold / maxSeat) * 100).toFixed(0) + '%' : '0';
+            var offStyle = off ? ' style="background-color:#fffde7;"' : '';
+            row += '<td class="text-center"' + offStyle + '>' + maxSeat + '</td>'
+                 + '<td class="text-center"' + offStyle + '>' + pct + '</td>'
+                 + '<td class="text-center"' + offStyle + '>' + sold + '</td>';
+        });
+        row += '</tr>';
+        return row;
+    }).join('');
+
 </script>
 @endsection

@@ -100,14 +100,12 @@ class AkapMonthlyReportController extends Controller
         } else {
             $target = Number::currency($target[0]->target, 'IDR');
         }
-
-        $classInfo = $this->classInfo($param);
-
         
         $param['trip_group'] = AkapMonthly::getTripGroup($param)->toArray();
         $param['trip_assign_group'] = AkapMonthly::getTripAssignGroup($param)->toArray();
         $param['class_temp_off'] = AkapMonthly::getTemporaryOff($param);
-        $param['class_info'] = $classInfo;
+        $param['class_temp_on'] = AkapMonthly::getTemporaryOn($param);
+        $param['class_info'] = $this->classInfo($param);
         $param['target'] = $target;
         
         $param['getTicket'] = AkapMonthly::getMonthlyTickets($month, $year);

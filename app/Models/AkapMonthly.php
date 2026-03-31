@@ -488,9 +488,11 @@ class AkapMonthly extends Model
             $query = $query->whereIn('tr.route', $param['trip_route_group']);
         }
         $query = $query->select(
+            'tras.id as tras_id',
             'tras.fleet_registration_id',
             'tat.date',
             'tat.date_finish',
+            'tr.route',
         )
             ->join('trip_assign AS tras', 'tr.trip_id', '=', 'tras.trip')
             ->join('trip_assign_temporary AS tat', 'tras.id', '=', 'tat.assign_id')

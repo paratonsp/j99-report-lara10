@@ -62,7 +62,6 @@ $endYear = date('Y') + 1;
                     </button>
                     <style>
                         .btn-detail-monthly:hover { color: #ff0000 !important; }
-                        #occupancyRateTable th, #occupancyRateTable td { padding: 10px 14px; }
                     </style>
                     <p>Total Tiket Berangkat:</p>
                     <p><strong id="income-value"></strong></p>
@@ -189,9 +188,15 @@ $endYear = date('Y') + 1;
             <div class="col-12 incomeSection">
                 <p>Occupancy Rate</p>
             </div>
-            <div class="col-12 pt-3" style="overflow-x: auto;">
-                <table id="occupancyRateTable" class="table table-bordered" style="white-space: nowrap; font-size: 0.9em;">
-                    <thead id="occupancyRateHead"></thead>
+            <div class="col-12 mt-2">
+                <table id="occupancyRateTable" class="table table-bordered table-striped occupancyRateTable nowrap">
+                    <thead>
+                        <tr id="occupacyRateDate">
+                            <th rowspan="2" colspan="1">Armada</th>
+                            <th rowspan="2" colspan="1">Trip</th>
+                        </tr>
+                        <tr id="occupacyRateDetail"></tr>
+                    </thead>
                     <tbody id="occupancyRateBody"></tbody>
                 </table>
             </div>
@@ -680,24 +685,28 @@ $endYear = date('Y') + 1;
 
     var days = Array.from({ length: reportData.total_days }, function (_, i) { return i + 1; });
 
-    // Build header row 1: day numbers spanning 3 cols each
-    var head = document.getElementById('occupancyRateHead');
+    // Build header rows
+    var trDate = document.getElementById('occupacyRateDate');
+    var trDetail = document.getElementById('occupacyRateDetail');
     var isDayAnyOff = function (d) {
         return classInfoGrouped.some(function (bus) { return isBusOffOnDay(bus, d); });
     };
 
-    var tr1 = '<tr><th rowspan="2">Armada</th><th rowspan="2">Trip</th>';
     days.forEach(function (d) {
-        tr1 += '<th colspan="3" class="text-center">' + d + '</th>';
+        var th = document.createElement('th');
+        th.colSpan = 3;
+        th.className = 'text-center';
+        th.textContent = d;
+        trDate.appendChild(th);
     });
-    tr1 += '</tr>';
 
-    var tr2 = '<tr>';
     days.forEach(function () {
-        tr2 += '<th>Max Seat</th><th>% Occup</th><th>Ticket Sold</th>';
+        ['Max Seat', '% Occup', 'Ticket Sold'].forEach(function (label) {
+            var th = document.createElement('th');
+            th.textContent = label;
+            trDetail.appendChild(th);
+        });
     });
-    tr2 += '</tr>';
-    head.innerHTML = tr1 + tr2;
 
     // Build body rows: one per bus
     var tbody = document.getElementById('occupancyRateBody');
@@ -716,6 +725,29 @@ $endYear = date('Y') + 1;
         row += '</tr>';
         return row;
     }).join('');
+
+    $('#occupancyRateTable').DataTable({
+            "scrollX": true,
+            "scrollY": '70vh',
+            "responsive": false,
+            "paging": false,
+            "ordering": true,
+            "searching": true,
+            "fixedColumns": {
+                "leftColumns": 2
+            },
+            "scrollCollapse": true,
+            "columnDefs": [{
+                    "className": "dt-center",
+                    "targets": "_all"
+                },
+                {
+                    "targets": 1,
+                    "width": 1
+                }
+            ],
+            "buttons": ["copy", "csv", "excel", "pdf", "print"]
+        }).buttons().container().appendTo('#occupancyRateTable_wrapper .col-md-6:eq(0)');
 
 </script>
 @endsection

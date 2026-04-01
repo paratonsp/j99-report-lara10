@@ -228,6 +228,83 @@ $endYear = date('Y') + 1;
             </div>
         </div>
 
+        {{-- section 8 --}}
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Ticketing Support</p>
+            </div>
+            <br>
+            <div class="col-lg-8 col-12">
+                <x-chartjs-component :chart="$ticketing_support_bar" />
+            </div>
+            <div class="col-lg-4 col-12">
+                <x-chartjs-component :chart="$ticketing_support_pie_chart" />
+            </div>
+        </div>
+
+        {{-- section 9  --}}
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Perbandingan Bulan Lalu</p>
+            </div>
+            <div class="col-12 mt-2">
+                <canvas id="perbandinganBulanLaluChart"></canvas>
+            </div>
+            <div class="row col-12 mt-3">
+                <div class="col-6">
+                    <p class="perbandingan-bulan-lalu">Total Tiket Bulan Lalu: <strong id="prev-month-seat"></strong></p>
+                </div>
+                <div class="col-6">
+                    <p class="perbandingan-bulan-lalu">Total Pendapatan Bulan Lalu: <strong id="prev-month-income"></strong></p>
+                </div>
+            </div>
+            <div class="row col-12 mt-3">
+                <div class="col-6">
+                    <p class="perbandingan-bulan-lalu">Total Tiket Bulan Ini: <strong id="curr-month-seat"></strong></p>
+                </div>
+                <div class="col-6">
+                    <p class="perbandingan-bulan-lalu">Total Pendapatan Bulan Ini: <strong id="curr-month-income"></strong></p>
+                </div>
+            </div>
+        </div>
+
+        {{-- section 10 --}}
+        <div class="row">
+            <div class="col-md-6 col-12 mb-3">
+                <div class="col-12 incomeSection">
+                    <p>Jadwal Buka Sementara</p>
+                </div>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Armada</th>
+                            <th>Kendala</th>
+                            <th>Awal</th>
+                            <th>Akhir</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tempOnTableBody"></tbody>
+                </table>
+            </div>
+            <div class="col-md-6 col-12 mb-3">
+                <div class="col-12 incomeSection">
+                    <p>Jadwal Tutup Sementara</p>
+                </div>
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Armada</th>
+                            <th>Kendala</th>
+                            <th>Awal</th>
+                            <th>Akhir</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tempOffTableBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -315,8 +392,9 @@ $endYear = date('Y') + 1;
      * @property {Ticket[]} getTicket
      * @property {Ticket[]} getBuy
      * @property {number} target
-     * @property {{ tras_id: number, fleet_registration_id: number, date: string, date_finish: string, route: number }[]} class_temp_off
-     * @property {{ tras_id: number, fleet_registration_id: number, date: string, date_finish: string, route: number }[]} class_temp_on
+     * @property {Ticket[]} getTicketPrevMonth
+     * @property {{ tras_id: number, fleet_registration_id: number, date: string, date_finish: string, route: number, bus: string, registration: string, causes: string }[]} class_temp_off
+     * @property {{ tras_id: number, fleet_registration_id: number, date: string, date_finish: string, route: number, bus: string, registration: string, causes: string }[]} class_temp_on
      */
 
     /** @type {reportData} */
@@ -331,11 +409,12 @@ $endYear = date('Y') + 1;
         getTicket: @json($getTicket ?? []),
         getBuy: @json($getBuy ?? []),
         target: @json($target ?? 0),
+        getTicketPrevMonth: @json($getTicketPrevMonth ?? []),
         class_temp_off: @json($class_temp_off ?? []),
         class_temp_on: @json($class_temp_on ?? []),
     };
 
-    console.log(reportData);
+    // console.log(reportData);
 
     var calcDaysOff = function (fleet_registration_id, tras_id) {
         return reportData.class_temp_off.reduce(function (total, off) {
@@ -399,8 +478,8 @@ $endYear = date('Y') + 1;
         return acc;
     }, {}));
 
-    console.log('classInfoGrouped',classInfoGrouped);
-    console.log('classInfoByType',classInfoByType);
+    // console.log('classInfoGrouped',classInfoGrouped);
+    // console.log('classInfoByType',classInfoByType);
 
     var incomeTotal = reportData.getTicket.reduce(function (sum, ticket) {
         var price = (ticket.tp_price > 0) ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
@@ -843,6 +922,90 @@ $endYear = date('Y') + 1;
             },
         },
     });
+
+    // Section 9: Perbandingan Bulan Lalu
+    var prevDailyMap = reportData.getTicketPrevMonth.reduce(function (acc, t) {
+        var day = new Date(t.departure_date).getDate();
+        acc[day] = (acc[day] || 0) + t.passenger_count_tb;
+        return acc;
+    }, {});
+
+    var prevTotalDays = reportData.getTicketPrevMonth.length > 0
+        ? new Date(new Date(reportData.year, reportData.month - 1, 0)).getDate()
+        : reportData.total_days;
+
+    var prevDailyLabels = Array.from({ length: prevTotalDays }, function (_, i) { return i + 1; });
+    var maxDays = Math.max(reportData.total_days, prevTotalDays);
+    var chartLabels = Array.from({ length: maxDays }, function (_, i) { return i + 1; });
+
+    var currDailyData = chartLabels.map(function (d) { return dailyMap[d] || 0; });
+    var prevDailyData = chartLabels.map(function (d) { return prevDailyMap[d] || 0; });
+
+    var prevMonthName = monthNames[parseInt(reportData.month, 10) - 2 < 0 ? 11 : parseInt(reportData.month, 10) - 2];
+    var currMonthName = monthNames[parseInt(reportData.month, 10) - 1];
+
+    new Chart(document.getElementById('perbandinganBulanLaluChart'), {
+        type: 'line',
+        data: {
+            labels: chartLabels,
+            datasets: [
+                {
+                    label: currMonthName,
+                    data: currDailyData,
+                    borderColor: '#ff0000',
+                    backgroundColor: 'rgba(255,0,0,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                },
+                {
+                    label: prevMonthName,
+                    data: prevDailyData,
+                    borderColor: '#0066ff',
+                    backgroundColor: 'rgba(0,102,255,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            scales: {
+                xAxes: [{ scaleLabel: { display: true, labelString: 'Tanggal' } }],
+                yAxes: [{ ticks: { beginAtZero: true, stepSize: 1 }, scaleLabel: { display: true, labelString: 'Penumpang' } }],
+            },
+        },
+    });
+
+    var prevTotal = reportData.getTicketPrevMonth.reduce(function (s, t) { return s + t.passenger_count_tb; }, 0);
+    var prevIncome = reportData.getTicketPrevMonth.reduce(function (s, t) {
+        return s + (t.tp_price > 0 ? t.tp_price : (t.tb_price / t.passenger_count_tb));
+    }, 0);
+
+    document.getElementById('prev-month-seat').textContent = prevTotal;
+    document.getElementById('prev-month-income').textContent = formatIDR(prevIncome);
+    document.getElementById('curr-month-seat').textContent = reportData.getTicket.reduce(function (s, t) { return s + t.passenger_count_tb; }, 0);
+    document.getElementById('curr-month-income').textContent = formatIDR(incomeTotal);
+
+    // Section 10: Jadwal Buka/Tutup Sementara
+    var renderTempTable = function (tbodyId, data) {
+        var tbody = document.getElementById(tbodyId);
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">Tidak ada data</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.map(function (item, i) {
+            return '<tr>'
+                + '<td class="text-center">' + (i + 1) + '</td>'
+                + '<td>' + item.bus + '</td>'
+                + '<td>' + item.causes + '</td>'
+                + '<td>' + item.date + '</td>'
+                + '<td>' + item.date_finish + '</td>'
+                + '</tr>';
+        }).join('');
+    };
+
+    renderTempTable('tempOnTableBody', reportData.class_temp_on);
+    renderTempTable('tempOffTableBody', reportData.class_temp_off);
 
 </script>
 @endsection

@@ -46,12 +46,17 @@ Structural data: `trip_route_grouped`, `trip_group`, `trip_assign_group`, `total
 API params: `?month=&year=&trip=`
 
 ### Daily (`/akap/harian`)
-Structural data: `trip_route_grouped`, `dateStart`, `dateEnd`, `trip`
-API params: `?dateStart=&dateEnd=&trip=`
-Model scope: `AkapMonthly::getDailyTickets($dateStart, $dateEnd, $isBuy, $tripRouteIds)`
+Structural data: `trip_route_grouped`, `dateStart`, `dateEnd`, `trip`, `class_temp_off`, `class_temp_on`
+API params: `?dateStart=&dateEnd=&trip=` (date only, no time suffix — model uses `whereDate`)
+Model scopes: `AkapMonthly::getDailyTickets($dateStart, $dateEnd, $isBuy, $tripRouteIds)`
+             `AkapMonthly::getDailyTemporaryOff($dateStart, $dateEnd, $tripRouteIds)`
+             `AkapMonthly::getDailyTemporaryOn($dateStart, $dateEnd, $tripRouteIds)`
+
+**Price totals:** `mainIncome`/`mainSelling` are summed over ALL tickets directly (not via route groups), so tickets on unrecognised routes are still counted. Per-route cards use route group mapping.
 
 ## JS Data Model (`reportData`)
 
+### Monthly
 ```js
 {
   trip_route_grouped: TripRouteGrouped[],  // route groups with .name, .route (array of route IDs)
@@ -60,14 +65,28 @@ Model scope: `AkapMonthly::getDailyTickets($dateStart, $dateEnd, $isBuy, $tripRo
   total_days: number,
   month: string,
   year: string,
-  trip: number|null,                       // selected trip group ID
-  class_info: ClassInfo[],                 // buses with total_seat, days_active, trip_route_id, etc.
-  class_temp_off: TempOff[],              // temporarily closed buses (status=1 default)
-  class_temp_on: TempOn[],               // temporarily opened buses (status=0 default)
+  trip: number|null,
+  class_info: ClassInfo[],
+  class_temp_off: TempOff[],
+  class_temp_on: TempOn[],
   target: number|'-',
-  getTicket: Ticket[],                    // tickets by departure date in selected month
-  getBuy: Ticket[],                       // tickets by purchase date in selected month
-  getTicketPrevMonth: Ticket[],           // tickets by departure date in previous month
+  getTicket: Ticket[],           // fetched: departure date in month
+  getBuy: Ticket[],              // fetched: purchase date in month
+  getTicketPrevMonth: Ticket[],  // fetched: departure date in previous month
+}
+```
+
+### Daily
+```js
+{
+  trip_route_grouped: TripRouteGrouped[],
+  dateStart: string,   // 'YYYY-MM-DD'
+  dateEnd: string,     // 'YYYY-MM-DD'
+  trip: number|null,
+  class_temp_off: TempOff[],   // structural (not fetched)
+  class_temp_on: TempOn[],     // structural (not fetched)
+  getTicket: Ticket[],         // fetched: departure date in range
+  getBuy: Ticket[],            // fetched: purchase date in range
 }
 ```
 

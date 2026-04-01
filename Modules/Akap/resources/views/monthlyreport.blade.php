@@ -599,7 +599,7 @@ $endYear = date('Y') + 1;
 
     var dailyMap = reportData.getTicket.reduce(function (acc, ticket) {
         var day = new Date(ticket.departure_date).getDate();
-        acc[day] = (acc[day] || 0) + ticket.passenger_count_tb;
+        acc[day] = (acc[day] || 0) + 1;
         return acc;
     }, {});
 

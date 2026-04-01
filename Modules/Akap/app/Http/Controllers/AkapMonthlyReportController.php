@@ -205,18 +205,42 @@ class AkapMonthlyReportController extends Controller
         return $data;
     }
 
-    public function getTicketData(Request $request)
+    private function resolveTripRouteIds($trip): array
+    {
+        if (!$trip) return [];
+        $tripRouteGroup = AkapMonthly::getTripRouteGroup($trip);
+        if ($tripRouteGroup->isEmpty()) return [];
+        $rx = array_filter(array_map('trim', explode(',', $tripRouteGroup[0]->route_x)));
+        $ry = array_filter(array_map('trim', explode(',', $tripRouteGroup[0]->route_y)));
+        return array_values(array_merge($rx, $ry));
+    }
+
+    public function getTicket(Request $request)
     {
         $month = $request->input('month', date('n'));
         $year = $request->input('year', date('Y'));
+        $tripRouteIds = $this->resolveTripRouteIds($request->input('trip'));
 
+        return response()->json(AkapMonthly::getMonthlyTickets($month, $year, false, $tripRouteIds));
+    }
+
+    public function getBuy(Request $request)
+    {
+        $month = $request->input('month', date('n'));
+        $year = $request->input('year', date('Y'));
+        $tripRouteIds = $this->resolveTripRouteIds($request->input('trip'));
+
+        return response()->json(AkapMonthly::getMonthlyTickets($month, $year, true, $tripRouteIds));
+    }
+
+    public function getTicketPrevMonth(Request $request)
+    {
+        $month = $request->input('month', date('n'));
+        $year = $request->input('year', date('Y'));
+        $tripRouteIds = $this->resolveTripRouteIds($request->input('trip'));
         $prevDate = Carbon::create($year, $month, 1)->subMonth();
 
-        return response()->json([
-            'getTicket' => AkapMonthly::getMonthlyTickets($month, $year),
-            'getBuy' => AkapMonthly::getMonthlyTickets($month, $year, true),
-            'getTicketPrevMonth' => AkapMonthly::getMonthlyTickets($prevDate->month, $prevDate->year),
-        ]);
+        return response()->json(AkapMonthly::getMonthlyTickets($prevDate->month, $prevDate->year, false, $tripRouteIds));
     }
 
     public function classInfo($reportData)

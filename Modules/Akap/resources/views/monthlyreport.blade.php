@@ -338,6 +338,21 @@ $endYear = date('Y') + 1;
         var newUrl = url.href;
         window.location.href = newUrl;
     });
+
+    $('#routeGroup').change(function() {
+        currentTrip = $(this).find(':selected').val()
+
+        var currentUrl = location.href;
+        var url = new URL(currentUrl);
+        if (currentTrip == "") {
+            url.searchParams.delete("trip");
+        } else {
+            url.searchParams.set("trip", currentTrip);
+        }
+        var newUrl = url.href;
+        window.location.href = newUrl;
+    });
+
     /**
      * @typedef {Object} TripRouteGrouped
      * @property {number} id
@@ -420,17 +435,19 @@ $endYear = date('Y') + 1;
         class_temp_on: @json($class_temp_on ?? []),
     };
 
-    var ticketUrl = '/akap/bulanan/tickets?month=' + reportData.month + '&year=' + reportData.year + (reportData.trip ? '&trip=' + reportData.trip : '');
+    var qs = '?month=' + reportData.month + '&year=' + reportData.year + (reportData.trip ? '&trip=' + reportData.trip : '');
 
     var loadingOverlay = document.getElementById('fetchLoadingOverlay');
     loadingOverlay.style.display = 'flex';
 
-    fetch(ticketUrl)
-        .then(function (r) { return r.json(); })
-        .then(function (ticketData) {
-            reportData.getTicket = ticketData.getTicket;
-            reportData.getBuy = ticketData.getBuy;
-            reportData.getTicketPrevMonth = ticketData.getTicketPrevMonth;
+    Promise.all([
+        fetch('/akap/bulanan/tickets' + qs).then(function (r) { return r.json(); }),
+        fetch('/akap/bulanan/buy' + qs).then(function (r) { return r.json(); }),
+        fetch('/akap/bulanan/tickets-prev' + qs).then(function (r) { return r.json(); }),
+    ]).then(function (results) {
+            reportData.getTicket = results[0];
+            reportData.getBuy = results[1];
+            reportData.getTicketPrevMonth = results[2];
 
     // console.log(reportData);
 
@@ -1026,7 +1043,7 @@ $endYear = date('Y') + 1;
     renderTempTable('tempOffTableBody', reportData.class_temp_off);
 
             loadingOverlay.style.display = 'none';
-        }) // end .then(ticketData)
+        }) // end Promise.all .then
         .catch(function (err) {
             loadingOverlay.style.display = 'none';
             console.error('Failed to load ticket data', err);

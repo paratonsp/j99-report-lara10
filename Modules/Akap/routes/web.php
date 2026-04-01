@@ -27,7 +27,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('bulanan-twin', [AkapMonthlyTwinController::class, 'index']);
 
         Route::get('bulanan', [AkapMonthlyReportController::class, 'index']);
-        Route::get('bulanan/tickets', [AkapMonthlyReportController::class, 'getTicketData']);
+        Route::get('bulanan/tickets', [AkapMonthlyReportController::class, 'getTicket']);
+        Route::get('bulanan/buy', [AkapMonthlyReportController::class, 'getBuy']);
+        Route::get('bulanan/tickets-prev', [AkapMonthlyReportController::class, 'getTicketPrevMonth']);
 
     });
 });

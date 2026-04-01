@@ -47,7 +47,7 @@ class AkapMonthly extends Model
         return $query->pluck('id');
     }
 
-    public function scopeGetMonthlyTickets($query, $month, $year, $isBuy = false)
+    public function scopeGetMonthlyTickets($query, $month, $year, $isBuy = false, $tripRouteIds = [])
     {
         return $query->select([
                 'tbh.booking_code',
@@ -81,7 +81,9 @@ class AkapMonthly extends Model
                 return $q->whereMonth('tb.booking_date', $month)
                         ->whereYear('tb.booking_date', $year);
             })
-            
+            ->when(!empty($tripRouteIds), function ($q) use ($tripRouteIds) {
+                return $q->whereIn('tb.trip_route_id', $tripRouteIds);
+            })
             ->orderBy('tbh.id', 'desc')
             ->get();
     }

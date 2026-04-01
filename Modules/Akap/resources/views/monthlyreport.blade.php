@@ -406,13 +406,23 @@ $endYear = date('Y') + 1;
         month: @json($month),
         year: @json($year),
         class_info: @json($class_info ?? []),
-        getTicket: @json($getTicket ?? []),
-        getBuy: @json($getBuy ?? []),
+        getTicket: [],
+        getBuy: [],
         target: @json($target ?? 0),
-        getTicketPrevMonth: @json($getTicketPrevMonth ?? []),
+        getTicketPrevMonth: [],
+        trip: @json($trip),
         class_temp_off: @json($class_temp_off ?? []),
         class_temp_on: @json($class_temp_on ?? []),
     };
+
+    var ticketUrl = '/akap/monthly/tickets?month=' + reportData.month + '&year=' + reportData.year + (reportData.trip ? '&trip=' + reportData.trip : '');
+
+    fetch(ticketUrl)
+        .then(function (r) { return r.json(); })
+        .then(function (ticketData) {
+            reportData.getTicket = ticketData.getTicket;
+            reportData.getBuy = ticketData.getBuy;
+            reportData.getTicketPrevMonth = ticketData.getTicketPrevMonth;
 
     // console.log(reportData);
 
@@ -1006,6 +1016,9 @@ $endYear = date('Y') + 1;
 
     renderTempTable('tempOnTableBody', reportData.class_temp_on);
     renderTempTable('tempOffTableBody', reportData.class_temp_off);
+
+        }) // end .then(ticketData)
+        .catch(function (err) { console.error('Failed to load ticket data', err); });
 
 </script>
 @endsection

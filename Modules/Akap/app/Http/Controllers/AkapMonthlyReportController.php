@@ -119,8 +119,6 @@ class AkapMonthlyReportController extends Controller
             $prevDate->year
         );
 
-        $reportData['getTicketPrevMonth'] = AkapMonthly::getMonthlyTickets($month - 1, $year);
-
         $tickSupport = $this->ticketingSupportChart($reportData);
         $reportData['ticketing_support_bar'] = $tickSupport['bar_chart'];
         $reportData['ticketing_support_pie_chart'] = $tickSupport['pie_chart'];
@@ -216,6 +214,20 @@ class AkapMonthlyReportController extends Controller
         ]);
 
         return $data;
+    }
+
+    public function getTicketData(Request $request)
+    {
+        $month = $request->input('month', date('n'));
+        $year = $request->input('year', date('Y'));
+
+        $prevDate = Carbon::create($year, $month, 1)->subMonth();
+
+        return response()->json([
+            'getTicket' => AkapMonthly::getMonthlyTickets($month, $year),
+            'getBuy' => AkapMonthly::getMonthlyTickets($month, $year, true),
+            'getTicketPrevMonth' => AkapMonthly::getMonthlyTickets($prevDate->month, $prevDate->year),
+        ]);
     }
 
     public function classInfo($reportData)

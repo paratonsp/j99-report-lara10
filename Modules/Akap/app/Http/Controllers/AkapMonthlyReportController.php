@@ -22,15 +22,15 @@ class AkapMonthlyReportController extends Controller
         $year = ($request->has('year')) ? $request->input('year') : date('Y');
         $trip = $request->input('trip');
 
-        // if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
-        //     $cacheKey = "akap_monthly_report_10_{$year}_{$month}_{$trip}";
+        if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
+            $cacheKey = "akapmonthly11_{$year}_{$month}_{$trip}";
 
-        //     $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
-        //         return $this->getReportData($request, $month, $year, $trip);
-        //     });
-        // } else {
+            $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
+                return $this->getReportData($request, $month, $year, $trip);
+            });
+        } else {
             $data = $this->getReportData($request, $month, $year, $trip);
-        // }
+        }
 
         // echo json_encode($data);
         // return;

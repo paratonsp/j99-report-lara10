@@ -97,11 +97,10 @@
     };
 
     var calcPrice = function (ticket) {
-        return ticket.tp_price > 0 ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
+        return (ticket.tp_price > 0) ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
     };
 
     var renderData = function () {
-        // Build route ID -> income/selling maps
         var incomeByRoute  = {};
         var sellingByRoute = {};
 

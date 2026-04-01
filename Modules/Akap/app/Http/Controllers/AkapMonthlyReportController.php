@@ -81,6 +81,7 @@ class AkapMonthlyReportController extends Controller
         //reportDataETER
         $reportData = [
             'trip_route_grouped' => $trip_route_grouped,
+            'trip_route_group' => $trip_route_group,
             'trip_group' => $trip_group,
             'trip_assign_group' => $trip_assign_group,
             'total_days' => $total_days,

@@ -98,7 +98,7 @@ class AkapMonthlyReportController extends Controller
         if ($target->isEmpty()) {
             $target = "-";
         } else {
-            $target = Number::currency($target[0]->target, 'IDR');
+            $target = Number::currency(INTVAL($target[0]->target), 'IDR');
         }
         
         $reportData['trip_group'] = AkapMonthly::getTripGroup($reportData)->toArray();

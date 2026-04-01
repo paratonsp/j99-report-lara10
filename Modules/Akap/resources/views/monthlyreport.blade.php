@@ -889,12 +889,12 @@ $endYear = date('Y') + 1;
 
     // Section 7: Perbandingan Titik Naik
     var pickupMap = reportData.getTicket.reduce(function (acc, t) {
-        acc[t.pickup_trip_location] = (acc[t.pickup_trip_location] || 0) + t.passenger_count_tb;
+        acc[t.pickup_trip_location] = (acc[t.pickup_trip_location] || 0) + 1;
         return acc;
     }, {});
 
     var dropMap = reportData.getTicket.reduce(function (acc, t) {
-        acc[t.drop_trip_location] = (acc[t.drop_trip_location] || 0) + t.passenger_count_tb;
+        acc[t.drop_trip_location] = (acc[t.drop_trip_location] || 0) + 1;
         return acc;
     }, {});
 
@@ -944,7 +944,7 @@ $endYear = date('Y') + 1;
     // Section 9: Perbandingan Bulan Lalu
     var prevDailyMap = reportData.getTicketPrevMonth.reduce(function (acc, t) {
         var day = new Date(t.departure_date).getDate();
-        acc[day] = (acc[day] || 0) + t.passenger_count_tb;
+        acc[day] = (acc[day] || 0) + 1;
         return acc;
     }, {});
 
@@ -994,14 +994,14 @@ $endYear = date('Y') + 1;
         },
     });
 
-    var prevTotal = reportData.getTicketPrevMonth.reduce(function (s, t) { return s + t.passenger_count_tb; }, 0);
+    var prevTotal = reportData.getTicketPrevMonth.length;
     var prevIncome = reportData.getTicketPrevMonth.reduce(function (s, t) {
         return s + (t.tp_price > 0 ? t.tp_price : (t.tb_price / t.passenger_count_tb));
     }, 0);
 
     document.getElementById('prev-month-seat').textContent = prevTotal;
     document.getElementById('prev-month-income').textContent = formatIDR(prevIncome);
-    document.getElementById('curr-month-seat').textContent = reportData.getTicket.reduce(function (s, t) { return s + t.passenger_count_tb; }, 0);
+    document.getElementById('curr-month-seat').textContent = reportData.getTicket.length;
     document.getElementById('curr-month-income').textContent = formatIDR(incomeTotal);
 
     // Section 10: Jadwal Buka/Tutup Sementara

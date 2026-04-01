@@ -21,13 +21,13 @@ use Modules\Akap\app\Http\Controllers\AkapMonthlyReportController;
 
 Route::middleware(['auth'])->group(function () {
     Route::prefix('akap')->group(function () {
-        Route::get('bulanan', [AkapMonthlyController::class, 'index']);
+        Route::get('bulanan-old', [AkapMonthlyController::class, 'index']);
         Route::get('harian', [AkapDailyController::class, 'index']);
 
         Route::get('bulanan-twin', [AkapMonthlyTwinController::class, 'index']);
 
-        Route::get('monthly', [AkapMonthlyReportController::class, 'index']);
-        Route::get('monthly/tickets', [AkapMonthlyReportController::class, 'getTicketData']);
+        Route::get('bulanan', [AkapMonthlyReportController::class, 'index']);
+        Route::get('bulanan/tickets', [AkapMonthlyReportController::class, 'getTicketData']);
 
     });
 });

@@ -420,7 +420,7 @@ $endYear = date('Y') + 1;
         class_temp_on: @json($class_temp_on ?? []),
     };
 
-    var ticketUrl = '/akap/monthly/tickets?month=' + reportData.month + '&year=' + reportData.year + (reportData.trip ? '&trip=' + reportData.trip : '');
+    var ticketUrl = '/akap/bulanan/tickets?month=' + reportData.month + '&year=' + reportData.year + (reportData.trip ? '&trip=' + reportData.trip : '');
 
     var loadingOverlay = document.getElementById('fetchLoadingOverlay');
     loadingOverlay.style.display = 'flex';

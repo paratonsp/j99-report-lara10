@@ -632,7 +632,7 @@ $endYear = date('Y') + 1;
 
     // Section 3: Occupancy By Route
     var routeTicketMap = reportData.getTicket.reduce(function (acc, ticket) {
-        acc[ticket.trip_route_id] = (acc[ticket.trip_route_id] || 0) + ticket.passenger_count_tb;
+        acc[ticket.trip_route_id] = (acc[ticket.trip_route_id] || 0) + 1;
         return acc;
     }, {});
 
@@ -718,7 +718,7 @@ $endYear = date('Y') + 1;
 
     // Section: Occupancy By Class
     var classTicketMap = reportData.getTicket.reduce(function (acc, ticket) {
-        acc[ticket.type] = (acc[ticket.type] || 0) + ticket.passenger_count_tb;
+        acc[ticket.type] = (acc[ticket.type] || 0) + 1;
         return acc;
     }, {});
 

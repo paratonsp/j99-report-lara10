@@ -104,6 +104,9 @@
         var incomeByRoute  = {};
         var sellingByRoute = {};
 
+        var mainIncome = reportData.getTicket.reduce(function (s, t) { return s + calcPrice(t); }, 0);
+        var mainSelling = reportData.getBuy.reduce(function (s, t) { return s + calcPrice(t); }, 0);
+
         reportData.getTicket.forEach(function (t) {
             incomeByRoute[t.trip_route_id] = (incomeByRoute[t.trip_route_id] || 0) + calcPrice(t);
         });
@@ -111,16 +114,9 @@
             sellingByRoute[t.trip_route_id] = (sellingByRoute[t.trip_route_id] || 0) + calcPrice(t);
         });
 
-        var mainIncome  = 0;
-        var mainSelling = 0;
-
         reportData.trip_route_grouped.forEach(function (rg) {
             var routeIds = rg.route.map(Number);
             var income  = routeIds.reduce(function (s, id) { return s + (incomeByRoute[id]  || 0); }, 0);
-            var selling = routeIds.reduce(function (s, id) { return s + (sellingByRoute[id] || 0); }, 0);
-            mainIncome  += income;
-            mainSelling += selling;
-
             var el = document.querySelector('#route-income-' + rg.id + ' .route-income-value');
             if (el) el.textContent = formatIDR(income);
         });

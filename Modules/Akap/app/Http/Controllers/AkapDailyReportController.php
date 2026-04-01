@@ -49,8 +49,8 @@ class AkapDailyReportController extends Controller
 
     public function getTicket(Request $request)
     {
-        $dateStart    = $request->input('dateStart', date('Y-m-d')) . ' 00:00:00';
-        $dateEnd      = $request->input('dateEnd',   date('Y-m-d')) . ' 23:59:59';
+        $dateStart    = $request->input('dateStart', date('Y-m-d'));
+        $dateEnd      = $request->input('dateEnd',   date('Y-m-d'));
         $tripRouteIds = $this->resolveTripRouteIds($request->input('trip'));
 
         return response()->json(AkapMonthly::getDailyTickets($dateStart, $dateEnd, false, $tripRouteIds));
@@ -58,8 +58,8 @@ class AkapDailyReportController extends Controller
 
     public function getBuy(Request $request)
     {
-        $dateStart    = $request->input('dateStart', date('Y-m-d')) . ' 00:00:00';
-        $dateEnd      = $request->input('dateEnd',   date('Y-m-d')) . ' 23:59:59';
+        $dateStart    = $request->input('dateStart', date('Y-m-d'));
+        $dateEnd      = $request->input('dateEnd',   date('Y-m-d'));
         $tripRouteIds = $this->resolveTripRouteIds($request->input('trip'));
 
         return response()->json(AkapMonthly::getDailyTickets($dateStart, $dateEnd, true, $tripRouteIds));

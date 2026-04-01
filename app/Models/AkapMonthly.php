@@ -117,9 +117,11 @@ class AkapMonthly extends Model
             ->where('tbh.payment_status', 1)
             ->where('tpp.cancel', 0)
             ->when($isBuy, function ($q) use ($dateStart, $dateEnd) {
-                return $q->whereBetween('tb.date', [$dateStart, $dateEnd]);
+                return $q->whereDate('tb.date', '>=', $dateStart)
+                         ->whereDate('tb.date', '<=', $dateEnd);
             }, function ($q) use ($dateStart, $dateEnd) {
-                return $q->whereBetween('tb.booking_date', [$dateStart, $dateEnd]);
+                return $q->whereDate('tb.booking_date', '>=', $dateStart)
+                         ->whereDate('tb.booking_date', '<=', $dateEnd);
             })
             ->when(!empty($tripRouteIds), function ($q) use ($tripRouteIds) {
                 return $q->whereIn('tb.trip_route_id', $tripRouteIds);

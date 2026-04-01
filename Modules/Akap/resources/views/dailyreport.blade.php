@@ -42,6 +42,35 @@
         </div>
         @endforeach
     </div>
+
+    {{-- Jadwal Buka/Tutup Sementara --}}
+    <div class="row col-12 mb-3">
+        <div class="col-12 m-1">
+            <h3>Jadwal Buka/Tutup Sementara</h3>
+        </div>
+        <div class="col-lg-6 col-12 mb-3">
+            <p class="mb-1"><strong>Tutup Sementara</strong></p>
+            <table class="table table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Armada</th><th>Keterangan</th><th>Dari</th><th>Sampai</th>
+                    </tr>
+                </thead>
+                <tbody id="tempOffTableBody"></tbody>
+            </table>
+        </div>
+        <div class="col-lg-6 col-12 mb-3">
+            <p class="mb-1"><strong>Buka Sementara</strong></p>
+            <table class="table table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th>#</th><th>Armada</th><th>Keterangan</th><th>Dari</th><th>Sampai</th>
+                    </tr>
+                </thead>
+                <tbody id="tempOnTableBody"></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 @endsection
@@ -53,6 +82,8 @@
         dateStart: @json($dateStart),
         dateEnd: @json($dateEnd),
         trip: @json($trip),
+        class_temp_off: @json($class_temp_off ?? []),
+        class_temp_on: @json($class_temp_on ?? []),
         getTicket: [],
         getBuy: [],
     };
@@ -66,7 +97,7 @@
     };
 
     var calcPrice = function (ticket) {
-        return ticket.tp_price > 0 ? ticket.tp_price : (ticket.tb_price / Math.max(ticket.passenger_count_tb, 1));
+        return ticket.tp_price > 0 ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
     };
 
     var renderData = function () {
@@ -99,6 +130,23 @@
         document.getElementById('main-selling-value').textContent = formatIDR(mainSelling);
     };
 
+    var renderTempTable = function (tbodyId, data) {
+        var tbody = document.getElementById(tbodyId);
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">Tidak ada data</td></tr>';
+            return;
+        }
+        tbody.innerHTML = data.map(function (item, i) {
+            return '<tr>'
+                + '<td class="text-center">' + (i + 1) + '</td>'
+                + '<td>' + item.bus + '</td>'
+                + '<td>' + item.causes + '</td>'
+                + '<td>' + item.date + '</td>'
+                + '<td>' + item.date_finish + '</td>'
+                + '</tr>';
+        }).join('');
+    };
+
     var qs = '?dateStart=' + reportData.dateStart + '&dateEnd=' + reportData.dateEnd + (reportData.trip ? '&trip=' + reportData.trip : '');
 
     var loadingOverlay = document.getElementById('fetchLoadingOverlay');
@@ -111,6 +159,8 @@
         reportData.getTicket = results[0];
         reportData.getBuy    = results[1];
         renderData();
+        renderTempTable('tempOffTableBody', reportData.class_temp_off);
+        renderTempTable('tempOnTableBody',  reportData.class_temp_on);
         loadingOverlay.style.display = 'none';
     }).catch(function (err) {
         loadingOverlay.style.display = 'none';

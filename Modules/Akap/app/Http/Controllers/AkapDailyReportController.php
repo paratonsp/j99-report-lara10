@@ -24,12 +24,16 @@ class AkapDailyReportController extends Controller
             $value->route = $temp_route;
         }
 
+        $tripRouteIds = $this->resolveTripRouteIds($trip);
+
         return view('akap::dailyreport', [
             'title'              => 'REPORT AKAP HARIAN',
             'trip_route_grouped' => $trip_route_grouped,
             'dateStart'          => $dateStart,
             'dateEnd'            => $dateEnd,
             'trip'               => $trip,
+            'class_temp_off'     => AkapMonthly::getDailyTemporaryOff($dateStart, $dateEnd, $tripRouteIds),
+            'class_temp_on'      => AkapMonthly::getDailyTemporaryOn($dateStart, $dateEnd, $tripRouteIds),
         ]);
     }
 

@@ -463,6 +463,60 @@ class AkapMonthly extends Model
         return $query;
     }
 
+    public function scopeGetDailyTemporaryOff($query, $dateStart, $dateEnd, $tripRouteIds = [])
+    {
+        $query = DB::table('trip as tr');
+        if (!empty($tripRouteIds)) {
+            $query->whereIn('tr.route', $tripRouteIds);
+        }
+        return $query->select(
+            'tras.id as tras_id',
+            'tras.fleet_registration_id',
+            'tad.date',
+            'tad.date_finish',
+            'tr.route',
+            'fr.reg_no as bus',
+            'frt.registration',
+            'tad.causes',
+        )
+            ->join('trip_assign AS tras', 'tr.trip_id', '=', 'tras.trip')
+            ->join('trip_assign_dayoff AS tad', 'tras.id', '=', 'tad.assign_id')
+            ->join('fleet_registration AS fr', 'tras.fleet_registration_id', '=', 'fr.id')
+            ->join('fleet_registration_type AS frt', 'fr.reg_no', '=', 'frt.registration')
+            ->where('tras.status', '1')
+            ->where('tad.date', '<=', $dateEnd)
+            ->where('tad.date_finish', '>=', $dateStart)
+            ->groupBy("tad.id")
+            ->get();
+    }
+
+    public function scopeGetDailyTemporaryOn($query, $dateStart, $dateEnd, $tripRouteIds = [])
+    {
+        $query = DB::table('trip as tr');
+        if (!empty($tripRouteIds)) {
+            $query->whereIn('tr.route', $tripRouteIds);
+        }
+        return $query->select(
+            'tras.id as tras_id',
+            'tras.fleet_registration_id',
+            'tat.date',
+            'tat.date_finish',
+            'tr.route',
+            'fr.reg_no as bus',
+            'frt.registration',
+            'tat.causes',
+        )
+            ->join('trip_assign AS tras', 'tr.trip_id', '=', 'tras.trip')
+            ->join('trip_assign_temporary AS tat', 'tras.id', '=', 'tat.assign_id')
+            ->join('fleet_registration AS fr', 'tras.fleet_registration_id', '=', 'fr.id')
+            ->join('fleet_registration_type AS frt', 'fr.reg_no', '=', 'frt.registration')
+            ->where('tras.status', 0)
+            ->where('tat.date', '<=', $dateEnd)
+            ->where('tat.date_finish', '>=', $dateStart)
+            ->groupBy("tat.id")
+            ->get();
+    }
+
     public function scopeGetTemporaryOnClassInfo($query, $param)
     {
         $query = DB::table('trip as tr');

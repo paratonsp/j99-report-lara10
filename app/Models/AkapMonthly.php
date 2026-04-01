@@ -51,6 +51,7 @@ class AkapMonthly extends Model
     {
         return $query->select([
                 'tbh.booking_code',
+                'tbh.booker',
                 'tpp.ticket_number',
                 'tb.adult AS passenger_count_tb',
                 'tb.price AS tb_price',

@@ -6,11 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\AkapMonthly;
 use Illuminate\Support\Number;
-use IcehouseVentures\LaravelChartjs\Facades\Chartjs;
-use DateTime;
-use DateInterval;
-use DatePeriod;
-use Helper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
@@ -108,101 +103,7 @@ class AkapMonthlyReportController extends Controller
         $reportData['class_info'] = $this->classInfo($reportData);
         $reportData['target'] = $target;
         
-        $tickSupport = $this->ticketingSupportChart($reportData);
-        $reportData['ticketing_support_bar'] = $tickSupport['bar_chart'];
-        $reportData['ticketing_support_pie_chart'] = $tickSupport['pie_chart'];
-
         return $reportData;
-    }
-
-    public function ticketingSupportChart($reportData)
-    {
-        $akap = AkapMonthly::getTicketingSupport($reportData);
-
-        $onlineLabel = "Online";
-        $onlineValue = 0;
-
-        $agenLabel = "Agen";
-        $agenValue = 0;
-
-        $kpLabel = "KP";
-        $kpValue = 0;
-
-        $listAgen = array('ybc@gmail.com', 'no-reply@traveloka.com');
-        $redbusAgen = 'ybc@gmail.com';
-        $redbusLabel = 'RedBus';
-        $redbusValue = 0;
-
-        $travelokaAgen = 'no-reply@traveloka.com';
-        $travelokaLabel = 'Traveloka';
-        $travelokaValue = 0;
-
-
-
-        foreach ($akap as $value) {
-            if (in_array($value->booker, $listAgen)) {
-                if ($value->booker == $redbusAgen) {
-                    $redbusValue = $redbusValue + $value->passengger;
-                }
-                if ($value->booker == $travelokaAgen) {
-                    $travelokaValue = $travelokaValue + $value->passengger;
-                }
-            } else {
-                if (strstr(strtolower($value->booker), 'kantorperwakilan')) {
-                    $kpValue = $kpValue + $value->passengger;
-                } else {
-                    $onlineValue = $onlineValue + $value->passengger;
-                }
-            }
-        }
-
-        $label = array($onlineLabel, $redbusLabel, $travelokaLabel, $kpLabel);
-        $value = array($onlineValue, $redbusValue, $travelokaValue, $kpValue);
-        $color = array(generateColor(0), generateColor(2), generateColor(4), generateColor(6));
-        $data['bar_chart'] = Chartjs::build()
-            ->name("TicketSupport")
-            ->type("horizontalBar")
-            ->size(["width" => 400, "height" => 200])
-            ->labels($label)
-            ->datasets([
-                [
-                    "data" => $value,
-                    'backgroundColor' => $color,
-                    'stack' => 'Stack 0',
-
-                ]
-            ])->options([
-                'plugins' => [
-                    'legend' => false
-                ]
-            ]);
-            
-        $totalValue = $onlineValue + $redbusValue + $travelokaValue + $kpValue;
-        $percentageValue = array();
-
-        foreach ($value as $val) {
-            $percentage = 0;
-            $percentage = ($val * 100 / $totalValue);
-            $percentage = number_format($percentage, 2, '.', '');
-            array_push($percentageValue, $percentage);
-        }
-
-        $label = array($onlineLabel.": {$percentageValue[0]}%", $redbusLabel.": {$percentageValue[1]}%", $travelokaLabel.": {$percentageValue[2]}%", $kpLabel.": {$percentageValue[3]}%");
-
-        $data['pie_chart'] = Chartjs::build()
-        ->name("TicketingSupportPieChart")
-        ->type("pie")
-        ->size(["width" => 400, "height" => 400])
-        ->labels($label)
-        ->datasets([
-            [
-                "label" => "Penumpang",
-                "data" => $value,
-                'backgroundColor' => $color,
-            ]
-        ]);
-
-        return $data;
     }
 
     private function resolveTripRouteIds($trip): array

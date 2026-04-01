@@ -240,10 +240,10 @@ $endYear = date('Y') + 1;
             </div>
             <br>
             <div class="col-lg-8 col-12">
-                <x-chartjs-component :chart="$ticketing_support_bar" />
+                <canvas id="ticketingSupportBarChart"></canvas>
             </div>
             <div class="col-lg-4 col-12">
-                <x-chartjs-component :chart="$ticketing_support_pie_chart" />
+                <canvas id="ticketingSupportPieChart"></canvas>
             </div>
         </div>
 
@@ -956,6 +956,51 @@ $endYear = date('Y') + 1;
                 xAxes: [{ ticks: { beginAtZero: true, stepSize: 1 } }],
             },
         },
+    });
+
+    // Section 8: Ticketing Support
+    var listAgen = ['ybc@gmail.com', 'no-reply@traveloka.com'];
+    var tsOnline = 0, tsRedbus = 0, tsTraveloka = 0, tsKP = 0;
+    reportData.getTicket.forEach(function (t) {
+        var booker = (t.booker || '').toLowerCase();
+        if (t.booker === 'ybc@gmail.com') {
+            tsRedbus++;
+        } else if (t.booker === 'no-reply@traveloka.com') {
+            tsTraveloka++;
+        } else if (booker.indexOf('kantorperwakilan') !== -1) {
+            tsKP++;
+        } else {
+            tsOnline++;
+        }
+    });
+
+    var tsTotal = tsOnline + tsRedbus + tsTraveloka + tsKP;
+    var tsPct = function (v) { return tsTotal > 0 ? ((v / tsTotal) * 100).toFixed(2) : '0'; };
+    var tsLabels = ['Online', 'RedBus', 'Traveloka', 'KP'];
+    var tsValues = [tsOnline, tsRedbus, tsTraveloka, tsKP];
+    var tsColors = ['#4e73df', '#e74a3b', '#f6c23e', '#1cc88a'];
+
+    new Chart(document.getElementById('ticketingSupportBarChart'), {
+        type: 'horizontalBar',
+        data: {
+            labels: tsLabels,
+            datasets: [{ data: tsValues, backgroundColor: tsColors }],
+        },
+        options: {
+            responsive: true,
+            legend: { display: false },
+            plugins: { legend: { display: false } },
+            scales: { xAxes: [{ ticks: { beginAtZero: true, stepSize: 1 } }] },
+        },
+    });
+
+    new Chart(document.getElementById('ticketingSupportPieChart'), {
+        type: 'pie',
+        data: {
+            labels: tsLabels.map(function (l, i) { return l + ': ' + tsPct(tsValues[i]) + '%'; }),
+            datasets: [{ label: 'Penumpang', data: tsValues, backgroundColor: tsColors }],
+        },
+        options: { responsive: true },
     });
 
     // Section 9: Perbandingan Bulan Lalu

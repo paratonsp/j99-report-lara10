@@ -10,6 +10,11 @@ $startYear = date('Y') - 2;
 $endYear = date('Y') + 1;
 ?>
 
+<div id="fetchLoadingOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:12px;">
+    <div class="spinner-border text-light" style="width:3rem; height:3rem;" role="status"></div>
+    <span style="color:#fff; font-size:1rem; font-weight:600;">Memuat data...</span>
+</div>
+
 <div class="row mb-2">
     <div class="col-12">
         {{-- section 1 --}}
@@ -416,6 +421,9 @@ $endYear = date('Y') + 1;
     };
 
     var ticketUrl = '/akap/monthly/tickets?month=' + reportData.month + '&year=' + reportData.year + (reportData.trip ? '&trip=' + reportData.trip : '');
+
+    var loadingOverlay = document.getElementById('fetchLoadingOverlay');
+    loadingOverlay.style.display = 'flex';
 
     fetch(ticketUrl)
         .then(function (r) { return r.json(); })
@@ -1017,8 +1025,12 @@ $endYear = date('Y') + 1;
     renderTempTable('tempOnTableBody', reportData.class_temp_on);
     renderTempTable('tempOffTableBody', reportData.class_temp_off);
 
+            loadingOverlay.style.display = 'none';
         }) // end .then(ticketData)
-        .catch(function (err) { console.error('Failed to load ticket data', err); });
+        .catch(function (err) {
+            loadingOverlay.style.display = 'none';
+            console.error('Failed to load ticket data', err);
+        });
 
 </script>
 @endsection

@@ -108,17 +108,6 @@ class AkapMonthlyReportController extends Controller
         $reportData['class_info'] = $this->classInfo($reportData);
         $reportData['target'] = $target;
         
-        $reportData['getTicket'] = AkapMonthly::getMonthlyTickets($month, $year);
-        $reportData['getBuy'] = AkapMonthly::getMonthlyTickets($month, $year, true);
-
-
-        $carbdate = Carbon::create($year, $month, 1);
-        $prevDate = $carbdate->subMonth();
-        $reportData['getTicketPrevMonth'] = AkapMonthly::getMonthlyTickets(
-            $prevDate->month, 
-            $prevDate->year
-        );
-
         $tickSupport = $this->ticketingSupportChart($reportData);
         $reportData['ticketing_support_bar'] = $tickSupport['bar_chart'];
         $reportData['ticketing_support_pie_chart'] = $tickSupport['pie_chart'];
@@ -221,13 +210,19 @@ class AkapMonthlyReportController extends Controller
         $month = $request->input('month', date('n'));
         $year = $request->input('year', date('Y'));
 
-        $prevDate = Carbon::create($year, $month, 1)->subMonth();
+        $cacheKey = "akap_ticket_data_{$year}_{$month}";
 
-        return response()->json([
-            'getTicket' => AkapMonthly::getMonthlyTickets($month, $year),
-            'getBuy' => AkapMonthly::getMonthlyTickets($month, $year, true),
-            'getTicketPrevMonth' => AkapMonthly::getMonthlyTickets($prevDate->month, $prevDate->year),
-        ]);
+        $data = Cache::remember($cacheKey, 60 * 60, function () use ($month, $year) {
+            $prevDate = Carbon::create($year, $month, 1)->subMonth();
+
+            return [
+                'getTicket' => AkapMonthly::getMonthlyTickets($month, $year),
+                'getBuy' => AkapMonthly::getMonthlyTickets($month, $year, true),
+                'getTicketPrevMonth' => AkapMonthly::getMonthlyTickets($prevDate->month, $prevDate->year),
+            ];
+        });
+
+        return response()->json($data);
     }
 
     public function classInfo($reportData)

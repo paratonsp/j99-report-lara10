@@ -7,6 +7,7 @@ use Modules\Akap\app\Http\Controllers\AkapDailyController;
 use Modules\Akap\app\Http\Controllers\AkapMonthlyTwinController;
 
 use Modules\Akap\app\Http\Controllers\AkapMonthlyReportController;
+use Modules\Akap\app\Http\Controllers\AkapDailyReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,7 +23,10 @@ use Modules\Akap\app\Http\Controllers\AkapMonthlyReportController;
 Route::middleware(['auth'])->group(function () {
     Route::prefix('akap')->group(function () {
         Route::get('bulanan-old', [AkapMonthlyController::class, 'index']);
-        Route::get('harian', [AkapDailyController::class, 'index']);
+        Route::get('harian-old', [AkapDailyController::class, 'index']);
+        Route::get('harian', [AkapDailyReportController::class, 'index']);
+        Route::get('harian/tickets', [AkapDailyReportController::class, 'getTicket']);
+        Route::get('harian/buy', [AkapDailyReportController::class, 'getBuy']);
 
         Route::get('bulanan-twin', [AkapMonthlyTwinController::class, 'index']);
 

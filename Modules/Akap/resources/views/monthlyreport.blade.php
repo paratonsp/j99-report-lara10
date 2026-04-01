@@ -813,11 +813,11 @@ $endYear = date('Y') + 1;
         }
     };
 
-    // tickets per tras_id per day
+    // tickets per tras_id per day (count seats = 1 per ticket record)
     var ticketsByTrasDay = reportData.getTicket.reduce(function (acc, t) {
         var day = new Date(t.departure_date).getDate();
         var key = t.tras_id + '_' + day;
-        acc[key] = (acc[key] || 0) + t.passenger_count_tb;
+        acc[key] = (acc[key] || 0) + 1;
         return acc;
     }, {});
 

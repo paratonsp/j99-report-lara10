@@ -621,24 +621,65 @@ $endYear = date('Y') + 1;
     }, {});
 
     var dailyLabels = Array.from({ length: reportData.total_days }, function (_, i) { return i + 1; });
-    var dailyData = dailyLabels.map(function (d) { return dailyMap[d] || 0; });
+
+    var dailyPassenggerDatasets;
+    var dailyPassenggerLegend = false;
+    if (reportData.trip && reportData.trip_route_grouped.length > 0) {
+        var tripRouteDetails = reportData.trip_route_grouped[0];
+        var routeXIds = String(tripRouteDetails.route_x).split(',').map(Number);
+        var routeYIds = String(tripRouteDetails.route_y).split(',').map(Number);
+
+        var dailyMapX = reportData.getTicket.reduce(function (acc, ticket) {
+            if (routeXIds.indexOf(Number(ticket.trip_route_id)) !== -1) {
+                var day = new Date(ticket.departure_date).getDate();
+                acc[day] = (acc[day] || 0) + 1;
+            }
+            return acc;
+        }, {});
+        var dailyMapY = reportData.getTicket.reduce(function (acc, ticket) {
+            if (routeYIds.indexOf(Number(ticket.trip_route_id)) !== -1) {
+                var day = new Date(ticket.departure_date).getDate();
+                acc[day] = (acc[day] || 0) + 1;
+            }
+            return acc;
+        }, {});
+
+        dailyPassenggerDatasets = [
+            {
+                label: tripRouteDetails.name_x,
+                data: dailyLabels.map(function (d) { return dailyMapX[d] || 0; }),
+                borderColor: '#ff0000',
+                fill: false,
+                pointBorderWidth: 4,
+            },
+            {
+                label: tripRouteDetails.name_y,
+                data: dailyLabels.map(function (d) { return dailyMapY[d] || 0; }),
+                borderColor: '#0066ff',
+                fill: false,
+                pointBorderWidth: 4,
+            },
+        ];
+        dailyPassenggerLegend = true;
+    } else {
+        dailyPassenggerDatasets = [{
+            label: 'Penumpang',
+            data: dailyLabels.map(function (d) { return dailyMap[d] || 0; }),
+            borderColor: '#ff0000',
+            fill: false,
+        }];
+    }
 
     new Chart(document.getElementById('dailyPassenggerChart'), {
         type: 'line',
         data: {
             labels: dailyLabels,
-            datasets: [{
-                label: 'Penumpang',
-                data: dailyData,
-                borderColor: '#ff0000',
-                borderRadius: 3,
-                fill: false,
-            }],
+            datasets: dailyPassenggerDatasets,
         },
         options: {
             responsive: true,
             plugins: {
-                legend: { display: false },
+                legend: { display: dailyPassenggerLegend },
             },
             scales: {
                 x: { title: { display: true, text: 'Tanggal' } },

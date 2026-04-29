@@ -702,8 +702,13 @@ $endYear = date('Y') + 1;
         var count = routeIds.reduce(function (sum, routeId) {
             return sum + (routeTicketMap[routeId] || 0);
         }, 0);
+        // Capacity must use effective active days (subtract temp_off for status=1 buses).
+        // Otherwise, when there are temporary offs, the route chart shows too much capacity.
         var capacity = reportData.class_info.reduce(function (sum, ci) {
-            return routeIds.indexOf(ci.trip_route_id) !== -1 ? sum + (ci.total_seat * ci.days_active) : sum;
+            if (routeIds.indexOf(ci.trip_route_id) === -1) return sum;
+            var daysOff = calcDaysOff(ci.fleet_registration_id, ci.tras_id);
+            var effectiveDays = Math.max(ci.days_active - daysOff, 0);
+            return sum + (ci.total_seat * effectiveDays);
         }, 0);
         routeLabels.push(rg.name);
         routeCounts.push(count);
@@ -759,7 +764,7 @@ $endYear = date('Y') + 1;
         new Chart(document.getElementById(canvasId), {
             type: 'doughnut',
             data: {
-                labels: [label, 'Lainnya'],
+                labels: [label, 'Sisa'],
                 datasets: [{
                     data: [count, remaining],
                     backgroundColor: [doughnutColors[i % doughnutColors.length], '#444444'],

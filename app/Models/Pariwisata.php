@@ -94,4 +94,25 @@ class Pariwisata extends Model
 
         return $query;
     }
+
+    public function scopeGetBookDaily($query, $param)
+    {
+        return DB::table('v2_book as book')
+            ->whereMonth('book.start_date', $param['month'])
+            ->whereYear('book.start_date', $param['year'])
+            ->groupBy(DB::raw('DAY(book.start_date)'))
+            ->select(DB::raw('DAY(book.start_date) as day, COUNT(*) as total'))
+            ->get();
+    }
+
+    public function scopeGetBusLakuHarian($query, $param)
+    {
+        return DB::table('v2_book as book')
+            ->join('v2_book_bus as book_bus', 'book.uuid', '=', 'book_bus.book_uuid')
+            ->whereMonth('book.start_date', $param['month'])
+            ->whereYear('book.start_date', $param['year'])
+            ->groupBy(DB::raw('DAY(book.start_date)'))
+            ->select(DB::raw('DAY(book.start_date) as day, COUNT(DISTINCT book_bus.bus_uuid) as total'))
+            ->get();
+    }
 }

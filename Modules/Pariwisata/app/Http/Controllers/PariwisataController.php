@@ -42,6 +42,8 @@ class PariwisataController extends Controller
         $data['penjualan_by_kelas_pie_chart'] = $this->penjualanBerdasarkanKelas($param)['pie_chart'];
         $data['penjualan_by_unit_bar_chart'] = $this->penjualanBerdasarkanUnit($param)['bar_chart'];
         $data['penjualan_by_unit_pie_chart'] = $this->penjualanBerdasarkanUnit($param)['pie_chart'];
+        $data['penjualan_harian_chart'] = $this->penjualanBerdasarkanHari($param, $total_days);
+        $data['bus_laku_harian_chart'] = $this->busLakuHarian($param, $total_days);
 
         $data['target'] = $target;
         $data['title'] = 'REPORT PARIWISATA';
@@ -179,6 +181,52 @@ class PariwisataController extends Controller
             ]);
 
         return $data;
+    }
+
+    public function penjualanBerdasarkanHari($param, $totalDays)
+    {
+        $book = Pariwisata::getBookDaily($param);
+        $dailyMap = $book->pluck('total', 'day')->toArray();
+
+        $labels = range(1, $totalDays);
+        $values = array_map(fn($d) => $dailyMap[$d] ?? 0, $labels);
+
+        return Chartjs::build()
+            ->name("PenjualanHarianLineChart")
+            ->type("line")
+            ->size(["width" => 400, "height" => 200])
+            ->labels($labels)
+            ->datasets([
+                [
+                    "label" => "Penjualan",
+                    "data" => $values,
+                    'borderColor' => '#ff0000',
+                    'fill' => false,
+                    'pointBorderWidth' => 4,
+                ]
+            ]);
+    }
+
+    public function busLakuHarian($param, $totalDays)
+    {
+        $book = Pariwisata::getBusLakuHarian($param);
+        $dailyMap = $book->pluck('total', 'day')->toArray();
+
+        $labels = range(1, $totalDays);
+        $values = array_map(fn($d) => $dailyMap[$d] ?? 0, $labels);
+
+        return Chartjs::build()
+            ->name("BusLakuHarianBarChart")
+            ->type("bar")
+            ->size(["width" => 400, "height" => 200])
+            ->labels($labels)
+            ->datasets([
+                [
+                    "label" => "Bus Laku",
+                    "data" => $values,
+                    'backgroundColor' => generateColor(1),
+                ]
+            ]);
     }
 
     public function penjualanBerdasarkanUnit($param)

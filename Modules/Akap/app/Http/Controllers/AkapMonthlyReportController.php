@@ -156,11 +156,25 @@ class AkapMonthlyReportController extends Controller
         }
 
         $tempOnClassInfo = AkapMonthly::getTemporaryOnClassInfo($reportData);
+
+        // Aggregate by (tras_id, fleet_type) so a spare bus with multiple
+        // temp_on periods in the same month is pushed only once per class type,
+        // with days_active = total active days across all periods.
+        $aggregated = [];
         foreach ($tempOnClassInfo as $value) {
             $dateFrom = Carbon::parse($value->date);
             $dateTo = Carbon::parse($value->date_finish);
-            $value->days_active = $dateFrom->diffInDays($dateTo) + 1;
-            $classInfo->push($value);
+            $days = $dateFrom->diffInDays($dateTo) + 1;
+            $key = $value->tras_id . '_' . $value->fleet_type;
+            if (!isset($aggregated[$key])) {
+                $value->days_active = $days;
+                $aggregated[$key] = $value;
+            } else {
+                $aggregated[$key]->days_active += $days;
+            }
+        }
+        foreach ($aggregated as $item) {
+            $classInfo->push($item);
         }
 
         return $classInfo;

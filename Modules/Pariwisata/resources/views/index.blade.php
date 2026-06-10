@@ -107,23 +107,6 @@ $endYear = date('Y') + 1;
             </div>
         </div>
 
-        <div class="row mb-5">
-            <div class="col-12 incomeSection">
-                <p>Penjualan Berdasarkan Hari</p>
-            </div>
-            <div class="col-12">
-                <x-chartjs-component :chart="$penjualan_harian_chart" />
-            </div>
-        </div>
-
-        <div class="row mb-5">
-            <div class="col-12 incomeSection">
-                <p>Jumlah Bus Laku Harian</p>
-            </div>
-            <div class="col-12">
-                <x-chartjs-component :chart="$bus_laku_harian_chart" />
-            </div>
-        </div>
     </div>
 </div>
 

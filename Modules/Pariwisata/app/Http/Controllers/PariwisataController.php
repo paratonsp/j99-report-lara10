@@ -42,8 +42,6 @@ class PariwisataController extends Controller
         $data['penjualan_by_kelas_pie_chart'] = $this->penjualanBerdasarkanKelas($param)['pie_chart'];
         $data['penjualan_by_unit_bar_chart'] = $this->penjualanBerdasarkanUnit($param)['bar_chart'];
         $data['penjualan_by_unit_pie_chart'] = $this->penjualanBerdasarkanUnit($param)['pie_chart'];
-        $data['penjualan_harian_chart'] = $this->penjualanBerdasarkanHari($param, $total_days);
-        $data['bus_laku_harian_chart'] = $this->busLakuHarian($param, $total_days);
 
         $data['target'] = $target;
         $data['title'] = 'REPORT PARIWISATA';
@@ -183,19 +181,45 @@ class PariwisataController extends Controller
         return $data;
     }
 
-    public function penjualanBerdasarkanHari($param, $totalDays)
+    public function daily(Request $request)
     {
-        $book = Pariwisata::getBookDaily($param);
-        $dailyMap = $book->pluck('total', 'day')->toArray();
+        $dateStart = $request->input('dateStart', date('Y-m-d'));
+        $dateEnd   = $request->input('dateEnd',   date('Y-m-d'));
 
-        $labels = range(1, $totalDays);
-        $values = array_map(fn($d) => $dailyMap[$d] ?? 0, $labels);
+        $income = Pariwisata::getIncomeDailyRange($dateStart, $dateEnd);
+        $incomeTotal = $income[0]->total ?? 0;
+
+        $labels = $this->buildDateLabels($dateStart, $dateEnd);
+
+        return view('pariwisata::daily', [
+            'title'                  => 'REPORT PARIWISATA HARIAN',
+            'dateStart'              => $dateStart,
+            'dateEnd'                => $dateEnd,
+            'income_total'           => Number::currency($incomeTotal ?: 0, 'IDR'),
+            'penjualan_harian_chart' => $this->chartPenjualanHarian($dateStart, $dateEnd, $labels),
+            'bus_laku_harian_chart'  => $this->chartBusLakuHarian($dateStart, $dateEnd, $labels),
+        ]);
+    }
+
+    private function buildDateLabels(string $dateStart, string $dateEnd): array
+    {
+        return collect(\Carbon\CarbonPeriod::create($dateStart, $dateEnd))
+            ->map(fn($d) => $d->format('Y-m-d'))
+            ->toArray();
+    }
+
+    private function chartPenjualanHarian(string $dateStart, string $dateEnd, array $labels)
+    {
+        $rows = Pariwisata::getDailyBooksByDate($dateStart, $dateEnd);
+        $map  = $rows->pluck('total', 'date')->toArray();
+        $displayLabels = array_map(fn($d) => date('d/m', strtotime($d)), $labels);
+        $values = array_map(fn($d) => $map[$d] ?? 0, $labels);
 
         return Chartjs::build()
             ->name("PenjualanHarianLineChart")
             ->type("line")
             ->size(["width" => 400, "height" => 200])
-            ->labels($labels)
+            ->labels($displayLabels)
             ->datasets([
                 [
                     "label" => "Penjualan",
@@ -207,19 +231,18 @@ class PariwisataController extends Controller
             ]);
     }
 
-    public function busLakuHarian($param, $totalDays)
+    private function chartBusLakuHarian(string $dateStart, string $dateEnd, array $labels)
     {
-        $book = Pariwisata::getBusLakuHarian($param);
-        $dailyMap = $book->pluck('total', 'day')->toArray();
-
-        $labels = range(1, $totalDays);
-        $values = array_map(fn($d) => $dailyMap[$d] ?? 0, $labels);
+        $rows = Pariwisata::getDailyBusLakuByDate($dateStart, $dateEnd);
+        $map  = $rows->pluck('total', 'date')->toArray();
+        $displayLabels = array_map(fn($d) => date('d/m', strtotime($d)), $labels);
+        $values = array_map(fn($d) => $map[$d] ?? 0, $labels);
 
         return Chartjs::build()
             ->name("BusLakuHarianBarChart")
             ->type("bar")
             ->size(["width" => 400, "height" => 200])
-            ->labels($labels)
+            ->labels($displayLabels)
             ->datasets([
                 [
                     "label" => "Bus Laku",

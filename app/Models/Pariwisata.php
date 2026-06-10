@@ -95,24 +95,35 @@ class Pariwisata extends Model
         return $query;
     }
 
-    public function scopeGetBookDaily($query, $param)
+    public function scopeGetIncomeDailyRange($query, $dateStart, $dateEnd)
     {
-        return DB::table('v2_book as book')
-            ->whereMonth('book.start_date', $param['month'])
-            ->whereYear('book.start_date', $param['year'])
-            ->groupBy(DB::raw('DAY(book.start_date)'))
-            ->select(DB::raw('DAY(book.start_date) as day, COUNT(*) as total'))
+        return DB::table('v2_book')
+            ->whereDate('start_date', '>=', $dateStart)
+            ->whereDate('start_date', '<=', $dateEnd)
+            ->select(DB::raw('SUM(total_price) as total'))
             ->get();
     }
 
-    public function scopeGetBusLakuHarian($query, $param)
+    public function scopeGetDailyBooksByDate($query, $dateStart, $dateEnd)
+    {
+        return DB::table('v2_book')
+            ->whereDate('start_date', '>=', $dateStart)
+            ->whereDate('start_date', '<=', $dateEnd)
+            ->groupBy(DB::raw('DATE(start_date)'))
+            ->orderBy(DB::raw('DATE(start_date)'))
+            ->select(DB::raw('DATE(start_date) as date, COUNT(*) as total'))
+            ->get();
+    }
+
+    public function scopeGetDailyBusLakuByDate($query, $dateStart, $dateEnd)
     {
         return DB::table('v2_book as book')
             ->join('v2_book_bus as book_bus', 'book.uuid', '=', 'book_bus.book_uuid')
-            ->whereMonth('book.start_date', $param['month'])
-            ->whereYear('book.start_date', $param['year'])
-            ->groupBy(DB::raw('DAY(book.start_date)'))
-            ->select(DB::raw('DAY(book.start_date) as day, COUNT(DISTINCT book_bus.bus_uuid) as total'))
+            ->whereDate('book.start_date', '>=', $dateStart)
+            ->whereDate('book.start_date', '<=', $dateEnd)
+            ->groupBy(DB::raw('DATE(book.start_date)'))
+            ->orderBy(DB::raw('DATE(book.start_date)'))
+            ->select(DB::raw('DATE(book.start_date) as date, COUNT(DISTINCT book_bus.bus_uuid) as total'))
             ->get();
     }
 }

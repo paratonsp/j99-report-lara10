@@ -107,6 +107,41 @@ $endYear = date('Y') + 1;
             </div>
         </div>
 
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Bus Berangkat Per Tanggal</p>
+            </div>
+            <div class="col-12">
+                @php $busByDate = $bus_by_date->groupBy('date'); @endphp
+                @if($busByDate->isEmpty())
+                    <p class="text-muted">Tidak ada data.</p>
+                @else
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Bus</th>
+                            <th>Jumlah Booking</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($busByDate as $date => $buses)
+                            @foreach($buses as $bus)
+                                <tr>
+                                    @if($loop->first)
+                                        <td rowspan="{{ $buses->count() }}">{{ date('d/m/Y', strtotime($date)) }}</td>
+                                    @endif
+                                    <td>{{ $bus->bus_name }}</td>
+                                    <td class="text-center">{{ $bus->total }}</td>
+                                </tr>
+                            @endforeach
+                        @endforeach
+                    </tbody>
+                </table>
+                @endif
+            </div>
+        </div>
+
     </div>
 </div>
 

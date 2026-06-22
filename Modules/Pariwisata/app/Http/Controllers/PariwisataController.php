@@ -43,6 +43,7 @@ class PariwisataController extends Controller
         $data['penjualan_by_unit_bar_chart'] = $this->penjualanBerdasarkanUnit($param)['bar_chart'];
         $data['penjualan_by_unit_pie_chart'] = $this->penjualanBerdasarkanUnit($param)['pie_chart'];
 
+        $data['bus_by_date'] = Pariwisata::getDailyBusListByMonth($param);
         $data['target'] = $target;
         $data['title'] = 'REPORT PARIWISATA';
         return view('pariwisata::index', $data);
@@ -191,13 +192,21 @@ class PariwisataController extends Controller
 
         $labels = $this->buildDateLabels($dateStart, $dateEnd);
 
+        $prevDateStart = Carbon::parse($dateStart)->subMonth()->format('Y-m-d');
+        $prevDateEnd   = Carbon::parse($dateEnd)->subMonth()->format('Y-m-d');
+        $prevLabels    = $this->buildDateLabels($prevDateStart, $prevDateEnd);
+
         return view('pariwisata::daily', [
-            'title'                  => 'REPORT PARIWISATA HARIAN',
-            'dateStart'              => $dateStart,
-            'dateEnd'                => $dateEnd,
-            'income_total'           => Number::currency($incomeTotal ?: 0, 'IDR'),
-            'penjualan_harian_chart' => $this->chartPenjualanHarian($dateStart, $dateEnd, $labels),
-            'bus_laku_harian_chart'  => $this->chartBusLakuHarian($dateStart, $dateEnd, $labels),
+            'title'                    => 'REPORT PARIWISATA HARIAN',
+            'dateStart'                => $dateStart,
+            'dateEnd'                  => $dateEnd,
+            'income_total'             => Number::currency($incomeTotal ?: 0, 'IDR'),
+            'penjualan_harian_chart'   => $this->chartPenjualanHarian($dateStart, $dateEnd, $labels),
+            'bus_laku_harian_chart'    => $this->chartBusLakuHarian($dateStart, $dateEnd, $labels),
+            'perbandingan_bulan_chart' => $this->chartPerbandinganBulan($dateStart, $dateEnd, $labels, $prevDateStart, $prevDateEnd, $prevLabels),
+            'bus_detail'               => Pariwisata::getDailyBusDetailByDate($dateStart, $dateEnd),
+            'prev_date_start'          => $prevDateStart,
+            'prev_date_end'            => $prevDateEnd,
         ]);
     }
 
@@ -249,6 +258,43 @@ class PariwisataController extends Controller
                     "data" => $values,
                     'backgroundColor' => generateColor(1),
                 ]
+            ]);
+    }
+
+    private function chartPerbandinganBulan(
+        string $dateStart, string $dateEnd, array $labels,
+        string $prevDateStart, string $prevDateEnd, array $prevLabels
+    ) {
+        $currRows   = Pariwisata::getDailyBooksByDate($dateStart, $dateEnd);
+        $currMap    = $currRows->pluck('total', 'date')->toArray();
+        $currValues = array_map(fn($d) => $currMap[$d] ?? 0, $labels);
+
+        $prevRows   = Pariwisata::getDailyBooksByDate($prevDateStart, $prevDateEnd);
+        $prevMap    = $prevRows->pluck('total', 'date')->toArray();
+        $prevValues = array_map(fn($d) => $prevMap[$d] ?? 0, $prevLabels);
+
+        $displayLabels = range(1, count($labels));
+
+        return Chartjs::build()
+            ->name("PerbandinganBulanChart")
+            ->type("line")
+            ->size(["width" => 400, "height" => 200])
+            ->labels($displayLabels)
+            ->datasets([
+                [
+                    "label"            => date('M Y', strtotime($dateStart)),
+                    "data"             => $currValues,
+                    'borderColor'      => '#ff0000',
+                    'fill'             => false,
+                    'pointBorderWidth' => 4,
+                ],
+                [
+                    "label"            => date('M Y', strtotime($prevDateStart)),
+                    "data"             => $prevValues,
+                    'borderColor'      => '#0066ff',
+                    'fill'             => false,
+                    'pointBorderWidth' => 4,
+                ],
             ]);
     }
 

@@ -37,6 +37,55 @@
                 <x-chartjs-component :chart="$bus_laku_harian_chart" />
             </div>
         </div>
+
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Bus Yang Beroperasi Per Tanggal</p>
+            </div>
+            <div class="col-12">
+                @php $busDetailByDate = $bus_detail->groupBy('date'); @endphp
+                @if($busDetailByDate->isEmpty())
+                    <p class="text-muted">Tidak ada data.</p>
+                @else
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Bus</th>
+                            <th>Jumlah Booking</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($busDetailByDate as $date => $buses)
+                            @foreach($buses as $bus)
+                                <tr>
+                                    @if($loop->first)
+                                        <td rowspan="{{ $buses->count() }}">{{ date('d/m/Y', strtotime($date)) }}</td>
+                                    @endif
+                                    <td>{{ $bus->bus_name }}</td>
+                                    <td class="text-center">{{ $bus->total }}</td>
+                                </tr>
+                            @endforeach
+                        @endforeach
+                    </tbody>
+                </table>
+                @endif
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Perbandingan Dengan Bulan Lalu</p>
+            </div>
+            <div class="col-12">
+                <small class="text-muted">
+                    Periode lalu: {{ date('d/m/Y', strtotime($prev_date_start)) }} &ndash; {{ date('d/m/Y', strtotime($prev_date_end)) }}
+                </small>
+            </div>
+            <div class="col-12 mt-2">
+                <x-chartjs-component :chart="$perbandingan_bulan_chart" />
+            </div>
+        </div>
     </div>
 </div>
 

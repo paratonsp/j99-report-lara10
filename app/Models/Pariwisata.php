@@ -126,4 +126,30 @@ class Pariwisata extends Model
             ->select(DB::raw('DATE(book.start_date) as date, COUNT(DISTINCT book_bus.bus_uuid) as total'))
             ->get();
     }
+
+    public function scopeGetDailyBusDetailByDate($query, $dateStart, $dateEnd)
+    {
+        return DB::table('v2_book as book')
+            ->join('v2_book_bus as book_bus', 'book.uuid', '=', 'book_bus.book_uuid')
+            ->join('v2_bus as bus', 'book_bus.bus_uuid', '=', 'bus.uuid')
+            ->whereDate('book.start_date', '>=', $dateStart)
+            ->whereDate('book.start_date', '<=', $dateEnd)
+            ->groupBy(DB::raw('DATE(book.start_date)'), 'bus.uuid', 'bus.name')
+            ->orderBy(DB::raw('DATE(book.start_date)'))
+            ->select(DB::raw('DATE(book.start_date) as date, bus.name as bus_name, COUNT(*) as total'))
+            ->get();
+    }
+
+    public function scopeGetDailyBusListByMonth($query, $param)
+    {
+        return DB::table('v2_book as book')
+            ->join('v2_book_bus as book_bus', 'book.uuid', '=', 'book_bus.book_uuid')
+            ->join('v2_bus as bus', 'book_bus.bus_uuid', '=', 'bus.uuid')
+            ->whereMonth('book.start_date', $param['month'])
+            ->whereYear('book.start_date', $param['year'])
+            ->groupBy(DB::raw('DATE(book.start_date)'), 'bus.uuid', 'bus.name')
+            ->orderBy(DB::raw('DATE(book.start_date)'))
+            ->select(DB::raw('DATE(book.start_date) as date, bus.name as bus_name, COUNT(*) as total'))
+            ->get();
+    }
 }

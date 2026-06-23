@@ -81,18 +81,22 @@ class Pariwisata extends Model
 
     public function scopeGetBookBus($query, $param)
     {
-        $query = DB::table('v2_book as book');
-        $query = $query->join('v2_book_bus as book_bus', 'book.uuid', '=', 'book_bus.book_uuid');
-        $query = $query->join('v2_bus as bus', 'book_bus.bus_uuid', '=', 'bus.uuid');
-        $query = $query->whereMonth('book.start_date', $param['month']);
-        $query = $query->whereYear('book.start_date', $param['year']);
-        $query = $query->groupBy('bus.name')
-            ->select(
-                DB::raw('bus.name as bus, count(*) as total')
-            )
-            ->get();
+        $monthYear = sprintf('%04d-%02d', $param['year'], $param['month']);
 
-        return $query;
+        return DB::table('ops_roadwarrant as rw')
+            ->join('v2_bus as bus', 'rw.bus_uuid', '=', 'bus.uuid')
+            ->whereIn('rw.bus_uuid', function ($q) use ($param) {
+                $q->select('bb.bus_uuid')
+                  ->from('v2_book_bus as bb')
+                  ->join('v2_book as book', 'bb.book_uuid', '=', 'book.uuid')
+                  ->whereMonth('book.start_date', $param['month'])
+                  ->whereYear('book.start_date', $param['year']);
+            })
+            ->whereRaw('SUBSTRING(rw.departure_date, 1, 7) = ?', [$monthYear])
+            ->groupBy('bus.uuid', 'bus.name')
+            ->orderByDesc(DB::raw('COUNT(rw.uuid)'))
+            ->select(DB::raw('bus.name as bus, COUNT(rw.uuid) as total'))
+            ->get();
     }
 
     public function scopeGetIncomeDailyRange($query, $dateStart, $dateEnd)

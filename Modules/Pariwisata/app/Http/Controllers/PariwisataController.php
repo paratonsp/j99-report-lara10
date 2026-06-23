@@ -317,7 +317,7 @@ class PariwisataController extends Controller
             ->labels($book_label)
             ->datasets([
                 [
-                    "label" => "Penggunaan Unit",
+                    "label" => "Jumlah Trip",
                     "data" => $book_value,
                     'backgroundColor' => generateColor(1),
                 ]
@@ -330,7 +330,7 @@ class PariwisataController extends Controller
             ->labels($book_label)
             ->datasets([
                 [
-                    "label" => "Penggunaan Unit",
+                    "label" => "Jumlah Trip",
                     "data" => $book_value,
                     'backgroundColor' => $book_color,
                 ]

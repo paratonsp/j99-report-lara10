@@ -40,6 +40,46 @@
 
         <div class="row mb-5">
             <div class="col-12 incomeSection">
+                <p>Jumlah Hari Bus Beroperasi</p>
+            </div>
+            <div class="col-12">
+                <small class="text-muted">
+                    Dari {{ $total_days }} hari dalam periode terpilih.
+                    Booking multi-hari dihitung per hari (tanggal mulai s/d tanggal selesai).
+                </small>
+            </div>
+            <div class="col-12 mt-2">
+                @if($bus_running_days->isEmpty())
+                    <p class="text-muted">Tidak ada data.</p>
+                @else
+                <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                            <th>Bus</th>
+                            <th class="text-center">Jumlah Hari Beroperasi</th>
+                            <th class="text-center">Jumlah Booking</th>
+                            <th class="text-center">Persentase Hari</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($bus_running_days as $bus)
+                        <tr>
+                            <td>{{ $bus->bus_name }}</td>
+                            <td class="text-center">{{ $bus->total_days }}</td>
+                            <td class="text-center">{{ $bus->total_booking }}</td>
+                            <td class="text-center">
+                                {{ $total_days > 0 ? round($bus->total_days / $total_days * 100, 1) : 0 }}%
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                @endif
+            </div>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
                 <p>Bus Yang Beroperasi Per Tanggal</p>
             </div>
             <div class="col-12">

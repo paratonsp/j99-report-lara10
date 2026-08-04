@@ -205,6 +205,8 @@ class PariwisataController extends Controller
             'bus_laku_harian_chart'    => $this->chartBusLakuHarian($dateStart, $dateEnd, $labels),
             'perbandingan_bulan_chart' => $this->chartPerbandinganBulan($dateStart, $dateEnd, $labels, $prevDateStart, $prevDateEnd, $prevLabels),
             'bus_detail'               => Pariwisata::getDailyBusDetailByDate($dateStart, $dateEnd),
+            'bus_running_days'         => Pariwisata::getBusRunningDaysByDate($dateStart, $dateEnd),
+            'total_days'               => count($labels),
             'prev_date_start'          => $prevDateStart,
             'prev_date_end'            => $prevDateEnd,
         ]);

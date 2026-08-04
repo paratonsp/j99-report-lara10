@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
 class Pariwisata extends Model
 {
@@ -142,6 +143,52 @@ class Pariwisata extends Model
             ->orderBy(DB::raw('DATE(book.start_date)'))
             ->select(DB::raw('DATE(book.start_date) as date, bus.name as bus_name, COUNT(*) as total'))
             ->get();
+    }
+
+    /**
+     * Jumlah hari bus beroperasi. Satu booking bisa lebih dari satu hari
+     * (start_date s/d finish_date), jadi setiap booking dihitung per hari
+     * dan dipotong sesuai rentang tanggal yang dipilih.
+     */
+    public function scopeGetBusRunningDaysByDate($query, $dateStart, $dateEnd)
+    {
+        $rangeStart = Carbon::parse($dateStart)->startOfDay();
+        $rangeEnd   = Carbon::parse($dateEnd)->startOfDay();
+
+        $books = DB::table('v2_book as book')
+            ->join('v2_book_bus as book_bus', 'book.uuid', '=', 'book_bus.book_uuid')
+            ->join('v2_bus as bus', 'book_bus.bus_uuid', '=', 'bus.uuid')
+            ->whereDate('book.start_date', '<=', $dateEnd)
+            ->whereDate(DB::raw('COALESCE(book.finish_date, book.start_date)'), '>=', $dateStart)
+            ->select(
+                'bus.uuid as bus_uuid',
+                'bus.name as bus_name',
+                'book.start_date',
+                'book.finish_date'
+            )
+            ->get();
+
+        return $books->groupBy('bus_uuid')
+            ->map(function ($rows) use ($rangeStart, $rangeEnd) {
+                $days = [];
+
+                foreach ($rows as $row) {
+                    $from = Carbon::parse($row->start_date)->startOfDay()->max($rangeStart);
+                    $to   = Carbon::parse($row->finish_date ?? $row->start_date)->startOfDay()->min($rangeEnd);
+
+                    foreach (CarbonPeriod::create($from, $to) as $day) {
+                        $days[$day->format('Y-m-d')] = true;
+                    }
+                }
+
+                return (object) [
+                    'bus_name'      => $rows->first()->bus_name,
+                    'total_days'    => count($days),
+                    'total_booking' => $rows->count(),
+                ];
+            })
+            ->sortByDesc('total_days')
+            ->values();
     }
 
     public function scopeGetDailyBusListByMonth($query, $param)

@@ -451,11 +451,19 @@ $endYear = date('Y') + 1;
 
     // console.log(reportData);
 
+    // A closure may start before / finish after the reported month, so clip it
+    // to the month before counting the days off.
+    var pad2 = function (n) { return String(n).padStart(2, '0'); };
+    var monthStart = new Date(reportData.year + '-' + pad2(reportData.month) + '-01');
+    var monthEnd = new Date(reportData.year + '-' + pad2(reportData.month) + '-' + pad2(reportData.total_days));
+
     var calcDaysOff = function (fleet_registration_id, tras_id) {
         return reportData.class_temp_off.reduce(function (total, off) {
             if (off.fleet_registration_id !== fleet_registration_id || off.tras_id !== tras_id) return total;
             var start = new Date(off.date);
-            var finish = new Date(off.date_finish);
+            var finish = new Date(off.date_finish || off.date);
+            if (start < monthStart) start = new Date(monthStart);
+            if (finish > monthEnd) finish = new Date(monthEnd);
             var days = 0;
             for (var d = new Date(start); d <= finish; d.setDate(d.getDate() + 1)) {
                 days++;

@@ -404,6 +404,9 @@ class AkapMonthly extends Model
 
     public function scopeGetTemporaryOff($query, $param)
     {
+        $monthStart = Carbon::create($param['year'], $param['month'], 1)->startOfMonth()->toDateString();
+        $monthEnd = Carbon::create($param['year'], $param['month'], 1)->endOfMonth()->toDateString();
+
         $query = DB::table('trip as tr');
         if (isset($param['trip_route_group'])) {
             $query = $query->whereIn('tr.route', $param['trip_route_group']);
@@ -423,10 +426,8 @@ class AkapMonthly extends Model
             ->join('fleet_registration AS fr', 'tras.fleet_registration_id', '=', 'fr.id')
             ->join('fleet_registration_type AS frt', 'fr.reg_no', '=', 'frt.registration')
             ->where('tras.status', '1')
-            ->whereMonth('tad.date', $param['month'])
-            ->whereYear('tad.date', $param['year'])
-            ->whereMonth('tad.date_finish', $param['month'])
-            ->whereYear('tad.date_finish', $param['year'])
+            ->where('tad.date', '<=', $monthEnd)
+            ->where('tad.date_finish', '>=', $monthStart)
             ->groupBy("tad.id")
             ->get();
 
@@ -435,6 +436,9 @@ class AkapMonthly extends Model
 
     public function scopeGetTemporaryOn($query, $param)
     {
+        $monthStart = Carbon::create($param['year'], $param['month'], 1)->startOfMonth()->toDateString();
+        $monthEnd = Carbon::create($param['year'], $param['month'], 1)->endOfMonth()->toDateString();
+
         $query = DB::table('trip as tr');
 
         if (isset($param['trip_route_group'])) {
@@ -455,10 +459,8 @@ class AkapMonthly extends Model
             ->join('fleet_registration AS fr', 'tras.fleet_registration_id', '=', 'fr.id')
             ->join('fleet_registration_type AS frt', 'fr.reg_no', '=', 'frt.registration')
             ->where('tras.status', 0)
-            ->whereMonth('tat.date', $param['month'])
-            ->whereYear('tat.date', $param['year'])
-            ->whereMonth('tat.date_finish', $param['month'])
-            ->whereYear('tat.date_finish', $param['year'])
+            ->where('tat.date', '<=', $monthEnd)
+            ->where('tat.date_finish', '>=', $monthStart)
             ->groupBy("tat.id")
             ->get();
 
@@ -521,6 +523,9 @@ class AkapMonthly extends Model
 
     public function scopeGetTemporaryOnClassInfo($query, $param)
     {
+        $monthStart = Carbon::create($param['year'], $param['month'], 1)->startOfMonth()->toDateString();
+        $monthEnd = Carbon::create($param['year'], $param['month'], 1)->endOfMonth()->toDateString();
+
         $query = DB::table('trip as tr');
 
         if (isset($param['trip_route_group'])) {
@@ -548,8 +553,8 @@ class AkapMonthly extends Model
             ->join('fleet_registration_type AS frt', 'fr.reg_no', '=', 'frt.registration')
             ->join('fleet_type AS ft', 'frt.type', '=', 'ft.id')
             ->where('tras.status', 0)
-            ->whereMonth('tat.date', $param['month'])
-            ->whereYear('tat.date', $param['year'])
+            ->where('tat.date', '<=', $monthEnd)
+            ->where('tat.date_finish', '>=', $monthStart)
             ->get();
 
         return $query;

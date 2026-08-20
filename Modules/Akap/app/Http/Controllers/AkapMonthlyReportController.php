@@ -40,7 +40,7 @@ class AkapMonthlyReportController extends Controller
         $trip_route_group = null;
         $trip_group = null;
         $trip_assign_group = null;
-        $total_days = Carbon::now()->month($month)->daysInMonth;
+        $total_days = Carbon::create($year, $month, 1)->daysInMonth;
 
         $trip_route_grouped = $routeGroupResult = AkapMonthly::getTripRouteGroup();
 
@@ -149,7 +149,7 @@ class AkapMonthlyReportController extends Controller
     {
         $classInfo = AkapMonthly::getAkapClassInfoList($reportData);
 
-        $totalDays = Carbon::now()->month($reportData['month'])->daysInMonth;
+        $totalDays = Carbon::create($reportData['year'], $reportData['month'], 1)->daysInMonth;
 
         foreach ($classInfo as $value) {
             $value->days_active = $totalDays;
@@ -161,9 +161,12 @@ class AkapMonthlyReportController extends Controller
         // temp_on periods in the same month is pushed only once per class type,
         // with days_active = total active days across all periods.
         $aggregated = [];
+        $monthStart = Carbon::create($reportData['year'], $reportData['month'], 1)->startOfMonth();
+        $monthEnd = Carbon::create($reportData['year'], $reportData['month'], 1)->endOfMonth();
+
         foreach ($tempOnClassInfo as $value) {
-            $dateFrom = Carbon::parse($value->date);
-            $dateTo = Carbon::parse($value->date_finish);
+            $dateFrom = Carbon::parse($value->date)->max($monthStart);
+            $dateTo = Carbon::parse($value->date_finish ?? $value->date)->min($monthEnd);
             $days = $dateFrom->diffInDays($dateTo) + 1;
             $key = $value->tras_id . '_' . $value->fleet_type;
             if (!isset($aggregated[$key])) {

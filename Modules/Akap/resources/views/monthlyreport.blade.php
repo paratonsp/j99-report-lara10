@@ -472,8 +472,14 @@ $endYear = date('Y') + 1;
         }, 0);
     };
 
+    // Group per trip assign, not per bus label. One bus can serve several trips
+    // (and several assigns can share a reg_no), so keying on item.bus summed the
+    // capacity of every one of them into a single row — a bus on three assigns
+    // showed 3x its real seat count. Everything downstream (isBusOffOnDay,
+    // calcDaysOff, ticketsByTrasDay) already keys on tras_id, so this makes the
+    // whole table consistent.
     var classInfoGrouped = Object.values(reportData.class_info.reduce(function (acc, item) {
-        var key = item.bus;
+        var key = item.tras_id;
         if (!acc[key]) {
             var daysOff = calcDaysOff(item.fleet_registration_id, item.tras_id);
             var effectiveDays = Math.max(item.days_active - daysOff, 0);

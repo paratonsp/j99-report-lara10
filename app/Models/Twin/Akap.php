@@ -129,7 +129,7 @@ class Akap extends Model
                     ) AS total_price_selling
                 ')
             )
-            ->first();
+            ->first() ?: false;
     }
 
     public function scopeGetIncome($query, $param)
@@ -406,6 +406,7 @@ class Akap extends Model
             $query = $query->whereIn('tr.route', $param['trip_route_group']);
         }
         $query = $query->select(
+            'tras.id AS assign_id',
             'tras.fleet_registration_id',
             'tad.date',
             'tad.date_finish',
@@ -430,6 +431,7 @@ class Akap extends Model
             $query = $query->whereIn('tr.route', $param['trip_route_group']);
         }
         $query = $query->select(
+            'tras.id AS assign_id',
             'tras.fleet_registration_id',
             'tat.date',
             'tat.date_finish',

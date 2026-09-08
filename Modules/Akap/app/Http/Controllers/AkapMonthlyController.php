@@ -442,10 +442,11 @@ class AkapMonthlyController extends Controller
                         foreach ($valueA['data'] as $keyB => $valueB) {
                             if ($valueB['date'] == $value->date) {
 
-                                if ($valueA['status'] = 1) {
+                                // An active bus runs every day except its dayoffs.
+                                if ($valueA['status'] == 1) {
                                     $tras_seat[$keyA]['data'][$keyB]['max_seat'] = $valueA['max_seat'];
                                     foreach ($busOff as $valueC) {
-                                        if ($valueC->fleet_registration_id == $valueA['fleet_reg_id']){
+                                        if ($valueC->assign_id == $valueA['id']){
                                             if (in_array($valueB['date'], $valueC->days)) {
                                                 $tras_seat[$keyA]['data'][$keyB]['max_seat'] = 0;
                                             } 
@@ -453,10 +454,12 @@ class AkapMonthlyController extends Controller
                                     }
                                 }
 
-                                if ($valueA['status'] = 0) {
+                                // A closed bus contributes no capacity except on the
+                                // days it was temporarily opened.
+                                if ($valueA['status'] == 0) {
                                     $tras_seat[$keyA]['data'][$keyB]['max_seat'] = 0;
                                     foreach ($busOn as $valueC) {
-                                        if ($valueC->fleet_registration_id == $valueA['fleet_reg_id']){
+                                        if ($valueC->assign_id == $valueA['id']){
                                             if (in_array($valueB['date'], $valueC->days)) {
                                                 $tras_seat[$keyA]['data'][$keyB]['max_seat'] = $valueA['max_seat'];
                                             } 

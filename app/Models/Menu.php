@@ -29,7 +29,7 @@ class Menu extends Model
             ->where('v2_users.email', $email)
             ->first();
 
-        return $query;
+        return $query ?: false;
     }
 
     public function scopeGetMenuParent($query)

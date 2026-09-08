@@ -52,15 +52,23 @@ class RoleController extends Controller
     {
         $data['title'] = 'Role Permission';
         $data['role_info'] = Role::getRoleInfo($role_uuid);
+
+        if (!$data['role_info']) {
+            return back()->with('failed', 'Role tidak ditemukan!');
+        }
+
         $permissionList = Menu::getMenu();
         foreach ($permissionList as $key => $value) {
             $access = Role::getAccess();
             $value->access = $access;
             foreach ($value->access as $keyAccess => $valueAccess) {
                 $permission = Role::getPermission($value->slug, $valueAccess->name);
-                $rolePermission = property_exists($permission, 'permid') ? Role::getRolePermission($permission->permid, $data['role_info']->id) : false;
-                $valueAccess->permissionId = property_exists($permission, 'permid') ? $permission->permid : '-';
-                $valueAccess->isAvailable = property_exists($permission, 'permid');
+                // Falsy check first: a miss is false, and property_exists(false, …)
+                // is a TypeError.
+                $hasPermission = $permission && property_exists($permission, 'permid');
+                $rolePermission = $hasPermission ? Role::getRolePermission($permission->permid, $data['role_info']->id) : false;
+                $valueAccess->permissionId = $hasPermission ? $permission->permid : '-';
+                $valueAccess->isAvailable = $hasPermission;
                 $valueAccess->isGranted = $rolePermission;
             }
         }
@@ -73,6 +81,11 @@ class RoleController extends Controller
     {
         $data = [];
         $roleId = Role::getRoleId($role_uuid);
+
+        if (!$roleId) {
+            return back()->with('failed', 'Role tidak ditemukan!');
+        }
+
         foreach ($request->permission as $key => $value) {
             $data[$key]['role_id'] = $roleId->roleid;
             $data[$key]['permission_id'] = $value;

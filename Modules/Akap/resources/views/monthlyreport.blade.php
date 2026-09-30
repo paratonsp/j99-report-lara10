@@ -451,38 +451,61 @@ $endYear = date('Y') + 1;
 
     // console.log(reportData);
 
-    // A closure may start before / finish after the reported month, so clip it
-    // to the month before counting the days off.
-    var pad2 = function (n) { return String(n).padStart(2, '0'); };
-    var monthStart = new Date(reportData.year + '-' + pad2(reportData.month) + '-01');
-    var monthEnd = new Date(reportData.year + '-' + pad2(reportData.month) + '-' + pad2(reportData.total_days));
+    var dateInRange = function (year, month, day, dateStr, dateFinishStr) {
+        var check = new Date(year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0'));
+        return check >= new Date(dateStr) && check <= new Date(dateFinishStr || dateStr);
+    };
 
-    var calcDaysOff = function (fleet_registration_id, tras_id) {
-        return reportData.class_temp_off.reduce(function (total, off) {
-            if (off.fleet_registration_id !== fleet_registration_id || off.tras_id !== tras_id) return total;
-            var start = new Date(off.date);
-            var finish = new Date(off.date_finish || off.date);
-            if (start < monthStart) start = new Date(monthStart);
-            if (finish > monthEnd) finish = new Date(monthEnd);
-            var days = 0;
-            for (var d = new Date(start); d <= finish; d.setDate(d.getDate() + 1)) {
-                days++;
-            }
-            return total + days;
-        }, 0);
+    // status=1: active by default, off when in class_temp_off
+    // status=0: inactive by default, on when in class_temp_on
+    var isBusOffOnDay = function (bus, day) {
+        if (bus.status === 1) {
+            return reportData.class_temp_off.some(function (off) {
+                return off.fleet_registration_id === bus.fleet_registration_id
+                    && off.tras_id === bus.tras_id
+                    && dateInRange(reportData.year, reportData.month, day, off.date, off.date_finish);
+            });
+        } else {
+            // status=0: day is OFF unless it appears in class_temp_on
+            return !reportData.class_temp_on.some(function (on) {
+                return on.fleet_registration_id === bus.fleet_registration_id
+                    && on.tras_id === bus.tras_id
+                    && dateInRange(reportData.year, reportData.month, day, on.date, on.date_finish);
+            });
+        }
+    };
+
+    // tickets per tras_id per day (count seats = 1 per ticket record)
+    var ticketsByTrasDay = reportData.getTicket.reduce(function (acc, t) {
+        var day = new Date(t.departure_date).getDate();
+        var key = t.tras_id + '_' + day;
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Count active days day-by-day instead of subtracting temp_off ranges, so
+    // duplicate/overlapping temp_off records aren't subtracted twice. A day the
+    // schedule marks off (or a spare bus without temp_on) still counts as active
+    // when tickets were sold for it — the bus ran, so its seats belong in the
+    // capacity. Otherwise those tickets push occupancy over 100%.
+    var calcActiveDays = function (item) {
+        var active = 0;
+        for (var d = 1; d <= reportData.total_days; d++) {
+            if (!isBusOffOnDay(item, d) || ticketsByTrasDay[item.tras_id + '_' + d]) active++;
+        }
+        return active;
     };
 
     // Group per trip assign, not per bus label. One bus can serve several trips
     // (and several assigns can share a reg_no), so keying on item.bus summed the
     // capacity of every one of them into a single row — a bus on three assigns
     // showed 3x its real seat count. Everything downstream (isBusOffOnDay,
-    // calcDaysOff, ticketsByTrasDay) already keys on tras_id, so this makes the
+    // calcActiveDays, ticketsByTrasDay) already keys on tras_id, so this makes the
     // whole table consistent.
     var classInfoGrouped = Object.values(reportData.class_info.reduce(function (acc, item) {
         var key = item.tras_id;
         if (!acc[key]) {
-            var daysOff = calcDaysOff(item.fleet_registration_id, item.tras_id);
-            var effectiveDays = Math.max(item.days_active - daysOff, 0);
+            var effectiveDays = calcActiveDays(item);
             acc[key] = {
                 bus: item.bus,
                 trip: item.trip,
@@ -493,7 +516,7 @@ $endYear = date('Y') + 1;
                 tras_id: item.tras_id,
                 assign_time: item.assign_time,
                 days_active: effectiveDays,
-                days_off: daysOff,
+                days_off: reportData.total_days - effectiveDays,
                 total_seat: 0,
                 total_seat_month: 0,
                 classes: [],
@@ -509,7 +532,7 @@ $endYear = date('Y') + 1;
         return acc;
     }, {}));
 
-    // Group class_info by type, accumulating total_seat * effective days_active
+    // Group class_info by type, accumulating total_seat * effective active days
     var classInfoByType = Object.values(reportData.class_info.reduce(function (acc, item) {
         var key = item.type;
         if (!acc[key]) {
@@ -520,8 +543,7 @@ $endYear = date('Y') + 1;
                 total_seat_month: 0,
             };
         }
-        var daysOff = calcDaysOff(item.fleet_registration_id, item.tras_id);
-        var effectiveDays = Math.max(item.days_active - daysOff, 0);
+        var effectiveDays = calcActiveDays(item);
         acc[key].total_seat += item.total_seat;
         acc[key].total_seat_month += item.total_seat * effectiveDays;
         return acc;
@@ -716,13 +738,11 @@ $endYear = date('Y') + 1;
         var count = routeIds.reduce(function (sum, routeId) {
             return sum + (routeTicketMap[routeId] || 0);
         }, 0);
-        // Capacity must use effective active days (subtract temp_off for status=1 buses).
-        // Otherwise, when there are temporary offs, the route chart shows too much capacity.
+        // Capacity must use effective active days (see calcActiveDays), same as the
+        // total and per-class capacity, so the route chart stays consistent with them.
         var capacity = reportData.class_info.reduce(function (sum, ci) {
             if (routeIds.indexOf(ci.trip_route_id) === -1) return sum;
-            var daysOff = calcDaysOff(ci.fleet_registration_id, ci.tras_id);
-            var effectiveDays = Math.max(ci.days_active - daysOff, 0);
-            return sum + (ci.total_seat * effectiveDays);
+            return sum + (ci.total_seat * calcActiveDays(ci));
         }, 0);
         routeLabels.push(rg.name);
         routeCounts.push(count);
@@ -866,38 +886,6 @@ $endYear = date('Y') + 1;
     });
 
     // Section 6: Occupancy Rate Table
-    var dateInRange = function (year, month, day, dateStr, dateFinishStr) {
-        var check = new Date(year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0'));
-        return check >= new Date(dateStr) && check <= new Date(dateFinishStr);
-    };
-
-    // status=1: active by default, off when in class_temp_off
-    // status=0: inactive by default, on when in class_temp_on
-    var isBusOffOnDay = function (bus, day) {
-        if (bus.status === 1) {
-            return reportData.class_temp_off.some(function (off) {
-                return off.fleet_registration_id === bus.fleet_registration_id
-                    && off.tras_id === bus.tras_id
-                    && dateInRange(reportData.year, reportData.month, day, off.date, off.date_finish);
-            });
-        } else {
-            // status=0: day is OFF unless it appears in class_temp_on
-            return !reportData.class_temp_on.some(function (on) {
-                return on.fleet_registration_id === bus.fleet_registration_id
-                    && on.tras_id === bus.tras_id
-                    && dateInRange(reportData.year, reportData.month, day, on.date, on.date_finish);
-            });
-        }
-    };
-
-    // tickets per tras_id per day (count seats = 1 per ticket record)
-    var ticketsByTrasDay = reportData.getTicket.reduce(function (acc, t) {
-        var day = new Date(t.departure_date).getDate();
-        var key = t.tras_id + '_' + day;
-        acc[key] = (acc[key] || 0) + 1;
-        return acc;
-    }, {});
-
     var days = Array.from({ length: reportData.total_days }, function (_, i) { return i + 1; });
 
     // Build header rows
@@ -929,8 +917,9 @@ $endYear = date('Y') + 1;
         var row = '<tr><td>' + bus.bus + '</td><td>' + bus.trip + '</td>';
         days.forEach(function (d) {
             var off = isBusOffOnDay(bus, d);
-            var maxSeat = off ? 0 : bus.total_seat;
             var sold = ticketsByTrasDay[bus.tras_id + '_' + d] || 0;
+            // A bus that sold tickets for the day ran that day, whatever the schedule says.
+            var maxSeat = (off && sold === 0) ? 0 : bus.total_seat;
             var pct = maxSeat > 0 ? ((sold / maxSeat) * 100).toFixed(0) + '%' : '0';
             var offStyle = off ? ' style="background-color:#fffde7;"' : '';
             row += '<td class="text-center"' + offStyle + '>' + maxSeat + '</td>'

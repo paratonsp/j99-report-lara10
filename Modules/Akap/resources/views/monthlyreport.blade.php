@@ -23,7 +23,7 @@ $endYear = date('Y') + 1;
                 <div class="col-md-6 col-12 mb-3">
                     <select name="routeGroup" id="routeGroup" class="custom-select">
                         <option value="">Semua Rute</option>
-                        <?php foreach ($trip_route_grouped as $rg)
+                        <?php foreach ($route_group as $rg)
                             if ($trip == ($rg->id)) {
                                 echo "<option value= " . $rg->id . " selected>" . $rg->name_x . "</option>";
                             } else {

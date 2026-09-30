@@ -44,7 +44,9 @@ class AkapMonthlyReportController extends Controller
 
         $trip_route_grouped = $routeGroupResult = AkapMonthly::getTripRouteGroup();
 
-        if ($request->has('trip')) {
+        // filled(), not has(): "?trip=" must mean all routes, same as resolveTripRouteIds(),
+        // otherwise class_info gets narrowed to the first route group while tickets are not.
+        if ($request->filled('trip')) {
             $trip_route_group = $trip_route_grouped = AkapMonthly::getTripRouteGroup($trip);
             if (isset($trip_route_group)) {
                 $temp_route = array();
@@ -103,7 +105,9 @@ class AkapMonthlyReportController extends Controller
         $reportData['class_temp_on'] = AkapMonthly::getTemporaryOn($reportData);
         $reportData['class_info'] = $this->classInfo($reportData);
         $reportData['target'] = $target;
-        
+        // Full list for the route dropdown — $trip_route_grouped is narrowed to the selected trip.
+        $reportData['route_group'] = $routeGroupResult;
+
         return $reportData;
     }
 

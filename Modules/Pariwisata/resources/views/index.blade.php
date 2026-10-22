@@ -106,6 +106,16 @@ $endYear = date('Y') + 1;
                 </div>
             </div>
         </div>
+
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Bus Berangkat Per Tanggal</p>
+            </div>
+            <div class="col-12">
+                <canvas id="busBerangkatPerTanggalChart"></canvas>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -133,6 +143,55 @@ $endYear = date('Y') + 1;
             url.searchParams.set("month", currentMonth);
             var newUrl = url.href;
             window.location.href = newUrl;
+        });
+
+        // Bus Berangkat Per Tanggal — stacked bar chart
+        var busRawData = @json($bus_by_date);
+        var chartMonth = {{ $month }};
+        var chartYear  = {{ $year }};
+        var daysInMonth = new Date(chartYear, chartMonth, 0).getDate();
+
+        var mm = String(chartMonth).padStart(2, '0');
+        var dateKeys = [];
+        var dateLabels = [];
+        for (var d = 1; d <= daysInMonth; d++) {
+            var dd = String(d).padStart(2, '0');
+            dateKeys.push(chartYear + '-' + mm + '-' + dd);
+            dateLabels.push(dd + '/' + mm);
+        }
+
+        var buses = [];
+        busRawData.forEach(function(r) {
+            if (buses.indexOf(r.bus_name) === -1) buses.push(r.bus_name);
+        });
+
+        var busDateMap = {};
+        busRawData.forEach(function(r) {
+            if (!busDateMap[r.bus_name]) busDateMap[r.bus_name] = {};
+            busDateMap[r.bus_name][r.date] = r.total;
+        });
+
+        var palette = ['#4bc0c0','#ff6384','#36a2eb','#ff9f40','#9966ff','#ffcd56','#c9cbcf','#e67e22','#2ecc71','#e74c3c'];
+        var datasets = buses.map(function(bus, i) {
+            return {
+                label: bus,
+                backgroundColor: palette[i % palette.length],
+                data: dateKeys.map(function(dateKey) {
+                    return (busDateMap[bus] && busDateMap[bus][dateKey]) ? busDateMap[bus][dateKey] : 0;
+                }),
+            };
+        });
+
+        new Chart(document.getElementById('busBerangkatPerTanggalChart'), {
+            type: 'bar',
+            data: { labels: dateLabels, datasets: datasets },
+            options: {
+                responsive: true,
+                scales: {
+                    xAxes: [{ stacked: true }],
+                    yAxes: [{ stacked: true, ticks: { beginAtZero: true, stepSize: 1 } }],
+                },
+            },
         });
     });
 </script>

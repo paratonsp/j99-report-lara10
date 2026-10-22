@@ -23,7 +23,7 @@ class AkapMonthlyController extends Controller
         $trip = $request->input('trip');
 
         if (env('AKAP_MONTHLY_REPORT_CACHE_ENABLED', false)) {
-            $cacheKey = "akap_monthly_report_{$year}_{$month}_{$trip}";
+            $cacheKey = "akap_monthly_report_10_{$year}_{$month}_{$trip}";
 
             $data = Cache::remember($cacheKey, 60 * 60, function () use ($request, $month, $year, $trip) {
                 return $this->getReportData($request, $month, $year, $trip);
@@ -31,6 +31,9 @@ class AkapMonthlyController extends Controller
         } else {
             $data = $this->getReportData($request, $month, $year, $trip);
         }
+
+        // echo json_encode($data);
+        // return;
 
         return view('akap::monthly', $data);
     }
@@ -139,7 +142,13 @@ class AkapMonthlyController extends Controller
 
         //DATA
         $data['income'] = $perbBulanLalu['current_month']['income'];
-        $data['selling'] = Number::currency(optional(Akap::getSelling($param))->total_price_selling ?? 0, 'IDR');
+        $monthlyPrice = $perbBulanLalu['current_month']['monthly_price'];
+        uksort($monthlyPrice, fn($a, $b) => strtotime(str_replace('-', '-01-', $a)) <=> strtotime(str_replace('-', '-01-', $b)));
+        $data['monthly_price'] = $monthlyPrice;
+
+        $sellingData = Akap::getSelling($param);
+        $data['selling'] = Number::currency($sellingData->total_price_selling ?? 0, 'IDR');
+        $data['selling_monthly'] = $sellingData->monthly_price ?? [];
         $data['target'] = $target;
         $data['route_group'] = $routeGroupResult;
         $data['title'] = 'REPORT AKAP BULANAN';
@@ -188,6 +197,31 @@ class AkapMonthlyController extends Controller
                 ];
             });
 
+        // Build off/on day arrays per fleet_registration_id
+        $offDaysByFleet = [];
+        foreach (Akap::getTemporaryOff($param) as $value) {
+            $start = new DateTime($value->date);
+            $end = new DateTime($value->date_finish);
+            $end->modify('+1 day');
+            $period = new DatePeriod($start, new DateInterval('P1D'), $end);
+            foreach ($period as $dt) {
+                $offDaysByFleet[$value->fleet_registration_id][] = (int)$dt->format('j');
+            }
+        }
+
+        $onDaysByFleet = [];
+        foreach (Akap::getTemporaryOn($param) as $value) {
+            $start = new DateTime($value->date);
+            $end = new DateTime($value->date_finish);
+            $end->modify('+1 day');
+            $period = new DatePeriod($start, new DateInterval('P1D'), $end);
+            foreach ($period as $dt) {
+                $onDaysByFleet[$value->fleet_registration_id][] = (int)$dt->format('j');
+            }
+        }
+
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $param['month'], $param['year']);
+
         $bookedSeat = 0;
         $totalSeat = 0;
 
@@ -200,8 +234,19 @@ class AkapMonthlyController extends Controller
 
             foreach ($class_info as $item) {
                 if (in_array($item->trip_route_id, $value->route)) {
-                    $total_days = $item->total_seat * $item->days_active;
-                    $totalSeat = $totalSeat + $total_days;
+                    if ($item->status == 1) {
+                        $offDays = $offDaysByFleet[$item->fleet_registration_id] ?? [];
+                        $activeDays = 0;
+                        for ($day = 1; $day <= $daysInMonth; $day++) {
+                            if (!in_array($day, $offDays)) {
+                                $activeDays++;
+                            }
+                        }
+                        $totalSeat += $item->total_seat * $activeDays;
+                    } else {
+                        $onDays = $onDaysByFleet[$item->fleet_registration_id] ?? [];
+                        $totalSeat += $item->total_seat * count($onDays);
+                    }
                 }
             }
         }
@@ -331,7 +376,7 @@ class AkapMonthlyController extends Controller
 
     public function occupancyByTrasTable($param)
     {
-        $classInfo = Akap::getAkapClassInfoTable($param);
+        $classInfo = Akap::getAkapClassInfoTableWithTemp($param);
 
         $tras_seat = array();
 
@@ -397,10 +442,11 @@ class AkapMonthlyController extends Controller
                         foreach ($valueA['data'] as $keyB => $valueB) {
                             if ($valueB['date'] == $value->date) {
 
-                                if ($valueA['status'] = 1) {
+                                // An active bus runs every day except its dayoffs.
+                                if ($valueA['status'] == 1) {
                                     $tras_seat[$keyA]['data'][$keyB]['max_seat'] = $valueA['max_seat'];
                                     foreach ($busOff as $valueC) {
-                                        if ($valueC->fleet_registration_id == $valueA['fleet_reg_id']){
+                                        if ($valueC->assign_id == $valueA['id']){
                                             if (in_array($valueB['date'], $valueC->days)) {
                                                 $tras_seat[$keyA]['data'][$keyB]['max_seat'] = 0;
                                             } 
@@ -408,10 +454,12 @@ class AkapMonthlyController extends Controller
                                     }
                                 }
 
-                                if ($valueA['status'] = 0) {
+                                // A closed bus contributes no capacity except on the
+                                // days it was temporarily opened.
+                                if ($valueA['status'] == 0) {
                                     $tras_seat[$keyA]['data'][$keyB]['max_seat'] = 0;
                                     foreach ($busOn as $valueC) {
-                                        if ($valueC->fleet_registration_id == $valueA['fleet_reg_id']){
+                                        if ($valueC->assign_id == $valueA['id']){
                                             if (in_array($valueB['date'], $valueC->days)) {
                                                 $tras_seat[$keyA]['data'][$keyB]['max_seat'] = $valueA['max_seat'];
                                             } 
@@ -467,21 +515,29 @@ class AkapMonthlyController extends Controller
                 $bus_seat[$value->name]['passengger'] = $value->passengger;
                 $bus_seat[$value->name]['max_seat'] = 0;
                 $bus_seat[$value->name]['tras_id'] = $value->tras_id;
+                $bus_seat[$value->name]['bus_uuid'] = $value->busUuid;
             }
+        }
+
+        // MANIFEST COUNT - first of month to today
+        $manifestCounts = Akap::getManifestCountByBus($param);
+        $manifestCountByBus = [];
+        foreach ($manifestCounts as $mc) {
+            $manifestCountByBus[$mc->bus_uuid] = $mc->manifest_count;
         }
 
         // REFERENCE BY SCHADULE
         foreach ($bus_seat as $key => $valueA) {
+            $manifestCount = $manifestCountByBus[$valueA['bus_uuid']] ?? 0;
             $bus_seat[$key]['trip_count'] = 0;
             $bus_seat[$key]['max_seat'] = 0;
             foreach ($class_info as $valueB) {
                 if ($valueA['tras_id'] == $valueB->tras_id) {
-                    $bus_seat[$key]['max_seat'] = $bus_seat[$key]['max_seat'] + ($valueB->total_seat * $valueB->days_active);
-                    $bus_seat[$key]['trip_count'] = $valueB->days_active;
+                    $bus_seat[$key]['max_seat'] = $bus_seat[$key]['max_seat'] + ($valueB->total_seat * $manifestCount);
+                    $bus_seat[$key]['trip_count'] = $manifestCount;
                 }
             }
         }
-
 
         $label = array();
         $max_seat = array();
@@ -549,6 +605,7 @@ class AkapMonthlyController extends Controller
             $data['doughnut_chart'][0]['percentage'] = "";
             $data['doughnut_chart'][0]['label'] = "";
             $data['doughnut_chart'][0]['trip_count'] = "";
+            $data['doughnut_chart'][0]['manifest_count'] = "";
             $data['doughnut_chart'][0]['chart'] = $this->nullChart('doughnut');
         }
 
@@ -557,7 +614,6 @@ class AkapMonthlyController extends Controller
 
     public function occupancyByClassChart($param, $classInfo, $seatAndClassBookingData)
     {
-        $class_info = $classInfo;
         $book_seat = $seatAndClassBookingData->groupBy('type')
             ->map(function ($group, $type) {
                 return (object)[
@@ -569,7 +625,7 @@ class AkapMonthlyController extends Controller
 
         foreach ($book_seat as $value) {
             $value->max_seat = 0;
-            foreach ($class_info as $item) {
+            foreach ($classInfo as $item) {
                 if ($item->type == $value->type) {
                     $total_days = $item->total_seat * $item->days_active;
                     $value->max_seat = $value->max_seat + $total_days;
@@ -736,15 +792,16 @@ class AkapMonthlyController extends Controller
         $current_month_summary = Akap::getMonthlyIncomeAndSeats($current_month_param);
 
         $data['current_month']['month'] = date("F", mktime(0, 0, 0, $current_month, 10));
-        $data['current_month']['income'] = Number::currency($current_month_summary->price ?? 0, 'IDR');
-        $data['current_month']['seat'] = $current_month_summary->seat ?? 0;
+        $data['current_month']['income'] = Number::currency($current_month_summary['price'] ?? 0, 'IDR');
+        $data['current_month']['seat'] = $current_month_summary['seat'] ?? 0;
+        $data['current_month']['monthly_price'] = $current_month_summary['monthly_price'] ?? [];
 
         $last_month_book = Akap::getDailyPassengerCounts($last_month_param);
         $last_month_summary = Akap::getMonthlyIncomeAndSeats($last_month_param);
 
         $data['last_month']['month'] = date("F", mktime(0, 0, 0, $last_month, 10));
-        $data['last_month']['income'] = Number::currency($last_month_summary->price ?? 0, 'IDR');
-        $data['last_month']['seat'] = $last_month_summary->seat ?? 0;
+        $data['last_month']['income'] = Number::currency($last_month_summary['price'] ?? 0, 'IDR');
+        $data['last_month']['seat'] = $last_month_summary['seat'] ?? 0;
 
         $keys_a = $current_month_book->keys()->toArray();
         $keys_b = $last_month_book->keys()->toArray();
@@ -1028,43 +1085,51 @@ class AkapMonthlyController extends Controller
         $totalDays = Carbon::now()->month($param['month'])->daysInMonth;
 
         foreach ($classInfo as $value) {
-            if ($value->status == 1) {
+            // if ($value->status == 1) {
                 $value->days_active = $totalDays;
-            } else {
-                $value->days_active = 0;
-            }
+            // } else {
+            //     $value->days_active = 0;
+            // }
         }
 
         // REFERENCE BY TEMPORARY ON & OFF
 
-        $busOff = Akap::getTemporaryOff($param);
-        $busOn = Akap::getTemporaryOn($param);
+        // $busOff = Akap::getTemporaryOff($param);
+        // $busOn = Akap::getTemporaryOn($param);
 
-        foreach ($busOff as $value) {
-            $dateFrom=Carbon::parse($value->date);
-            $dateTo=Carbon::parse($value->date_finish);
-            $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
+        // foreach ($busOff as $value) {
+        //     $dateFrom=Carbon::parse($value->date);
+        //     $dateTo=Carbon::parse($value->date_finish);
+        //     $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
 
-            foreach ($classInfo as $valueX) {
-                if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
-                    $valueX->days_active = $valueX->days_active - $value->count_days;
-                }
-            }
+        //     foreach ($classInfo as $valueX) {
+        //         if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
+        //             $valueX->days_active = $valueX->days_active - $value->count_days;
+        //         }
+        //     }
+        // }
+
+        // foreach ($busOn as $value) {
+        //     $dateFrom=Carbon::parse($value->date);
+        //     $dateTo=Carbon::parse($value->date_finish);
+        //     $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
+
+        //     foreach ($classInfo as $valueX) {
+        //         if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
+        //             $valueX->days_active = $valueX->days_active + $value->count_days;
+        //         }
+        //     }
+        // }
+
+        // ADD TEMPORARILY OPEN BUSES (status=0 with trip_assign_temporary records)
+        $tempOnClassInfo = Akap::getTemporaryOnClassInfo($param);
+        foreach ($tempOnClassInfo as $value) {
+            $dateFrom = Carbon::parse($value->date);
+            $dateTo = Carbon::parse($value->date_finish);
+            $value->days_active = $dateFrom->diffInDays($dateTo) + 1;
+            $classInfo->push($value);
         }
 
-        foreach ($busOn as $value) {
-            $dateFrom=Carbon::parse($value->date);
-            $dateTo=Carbon::parse($value->date_finish);
-            $value->count_days = $dateFrom->diffInDays($dateTo) + 1;
-
-            foreach ($classInfo as $valueX) {
-                if ($value->fleet_registration_id == $valueX->fleet_registration_id) {
-                    $valueX->days_active = $valueX->days_active + $value->count_days;
-                }
-            }
-        }
-
-        
         // REFERENCE BY BOOK
 
         // $temp_assign = array();

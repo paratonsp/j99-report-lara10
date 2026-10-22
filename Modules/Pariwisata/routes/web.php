@@ -15,5 +15,6 @@ use Modules\Pariwisata\app\Http\Controllers\PariwisataController;
 */
 
 Route::middleware(['auth'])->group(function () {
-    Route::resource('pariwisata', PariwisataController::class)->names('pariwisata');
+    Route::get('pariwisata/bulanan', [PariwisataController::class, 'index'])->name('pariwisata.bulanan');
+    Route::get('pariwisata/harian', [PariwisataController::class, 'daily'])->name('pariwisata.harian');
 });

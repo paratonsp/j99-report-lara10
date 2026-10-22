@@ -50,7 +50,7 @@ class Role extends Model
             ->orderBy('created_at')
             ->first();
 
-        return $query;
+        return $query ?: false;
     }
 
     public function scopeGetAccess($query)
@@ -73,7 +73,7 @@ class Role extends Model
             ->orderBy('id')
             ->first();
 
-        return $query;
+        return $query ?: false;
     }
 
     public function scopeGetRolePermission($query, $id, $role_id)
@@ -93,7 +93,7 @@ class Role extends Model
             ->where('uuid', $role_uuid)
             ->first();
 
-        return $query;
+        return $query ?: false;
     }
 
     public function scopeSaveRolePermission($query, $data)

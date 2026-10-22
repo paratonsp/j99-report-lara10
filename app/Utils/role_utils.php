@@ -59,8 +59,15 @@ function permissionCheck($access, $directSlug = '')
 function setUserSession($email)
 {
     $userRoleInfo = getUserRoleInfo($email);
-    $roleAccess = getRoleAccessData($userRoleInfo->role_id);
-    $menu = getMenu($userRoleInfo->role_id);
+
+    // A user whose role_uuid does not resolve gets no role rather than a fatal:
+    // getUserRoleInfo() inner-joins v2_role, so an orphaned role_uuid returns no
+    // row, and reading ->role_id off that would abort the login.
+    $userRoleInfo = $userRoleInfo ?: null;
+    $roleId       = $userRoleInfo->role_id ?? null;
+
+    $roleAccess = getRoleAccessData($roleId);
+    $menu = getMenu($roleId);
 
     session()->put('role_info_session', $userRoleInfo);
     session()->put('roleaccess_session', $roleAccess);

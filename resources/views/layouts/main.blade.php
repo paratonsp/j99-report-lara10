@@ -58,9 +58,9 @@
     <aside class="main-sidebar sidebar-dark-primary elevation-4">
       <!-- Brand Logo -->
       <a href="/" class="brand-link">
-        <img src="{{asset('assets/images/logo/j99-logo-square.png')}}" alt="J99 Logo" height="30" style="opacity: .8">
+        <img src="{{asset('assets/images/logo/j99-logo-wide.png')}}" alt="J99 Logo" height="30" style="opacity: .8">
         &nbsp;
-        <span class="brand-text font-weight-light"><strong>Juragan99 Trans</strong></span>
+        {{-- <span class="brand-text font-weight-light"><strong>Juragan99 Trans</strong></span> --}}
       </a>
 
       <!-- Sidebar -->

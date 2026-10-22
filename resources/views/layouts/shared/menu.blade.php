@@ -36,5 +36,15 @@
     </li>
     @endif
     @endforeach
+    <li class="nav-item">
+      <a href="{{ route('reports.addons', ['report' => 'insurance']) }}" class="nav-link {{ request()->is('reports/insurance*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-shield-alt"></i><p>Insurance Report</p>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a href="{{ route('reports.addons', ['report' => 'flexi']) }}" class="nav-link {{ request()->is('reports/flexi*') ? 'active' : '' }}">
+        <i class="nav-icon fas fa-ticket-alt"></i><p>Flexi Tiket Report</p>
+      </a>
+    </li>
   </ul>
 </nav>

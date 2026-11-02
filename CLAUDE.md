@@ -139,7 +139,7 @@ dailyMap           // { day: count } — current month daily tickets
 | 3 | Occupancy By Route (bar + doughnut per route) |
 | 4 | Occupancy By Class (bar + doughnut per class) |
 | 5 | Daily Passenger (line chart) |
-| 5b | Daily Revenue (line chart of selling per purchase day, from getBuy) |
+| 5b | Daily Revenue (line chart of revenue per departure day, from getTicket) |
 | 6 | Occupancy Rate (DataTables with fixedColumns, per bus per day) |
 | 7 | Perbandingan Titik Naik/Turun (horizontal bar charts) |
 | 8 | Ticketing Support (horizontal bar + pie, built from getTicket.booker) |

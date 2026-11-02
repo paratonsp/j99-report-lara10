@@ -734,9 +734,9 @@ $endYear = date('Y') + 1;
         },
     });
 
-    // Section 2b: Daily Revenue (penjualan tiket per tanggal beli)
-    var sellingByDay = reportData.getBuy.reduce(function (acc, ticket) {
-        var day = parseInt(String(ticket.buy_date).substring(8, 10), 10);
+    // Section 2b: Daily Revenue (tiket berangkat per tanggal keberangkatan)
+    var revenueByDay = reportData.getTicket.reduce(function (acc, ticket) {
+        var day = parseInt(String(ticket.departure_date).substring(8, 10), 10);
         var price = ticket.tp_price > 0 ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
         acc[day] = (acc[day] || 0) + price;
         return acc;
@@ -747,8 +747,8 @@ $endYear = date('Y') + 1;
         data: {
             labels: dailyLabels,
             datasets: [{
-                label: 'Penjualan Tiket',
-                data: dailyLabels.map(function (d) { return Math.round(sellingByDay[d] || 0); }),
+                label: 'Tiket Berangkat',
+                data: dailyLabels.map(function (d) { return Math.round(revenueByDay[d] || 0); }),
                 borderColor: '#ff0000',
                 fill: false,
                 pointBorderWidth: 4,
@@ -759,7 +759,7 @@ $endYear = date('Y') + 1;
             legend: { display: false },
             tooltips: {
                 callbacks: {
-                    label: function (item) { return 'Penjualan Tiket: ' + formatIDR(item.yLabel); },
+                    label: function (item) { return 'Tiket Berangkat: ' + formatIDR(item.yLabel); },
                 },
             },
             scales: {

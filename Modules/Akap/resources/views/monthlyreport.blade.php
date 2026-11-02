@@ -164,6 +164,29 @@ $endYear = date('Y') + 1;
             </div>
         </div>
 
+        {{-- section 2b: daily revenue --}}
+        <div class="row mb-5">
+            <div class="col-12 incomeSection">
+                <p>Daily Revenue</p>
+            </div>
+            <div class="col-12">
+                <canvas id="dailyRevenueChart"></canvas>
+            </div>
+            <div class="col-12 mt-3">
+                <small class="text-muted">
+                    Kolom rute dan "Tiket Berangkat" berdasarkan tanggal keberangkatan.
+                    "Penjualan Tiket" berdasarkan tanggal pembelian.
+                </small>
+            </div>
+            <div class="col-12 mt-2" style="overflow-x:auto;">
+                <table class="table table-bordered table-sm nowrap">
+                    <thead id="dailyRevenueHead"></thead>
+                    <tbody id="dailyRevenueBody"></tbody>
+                    <tfoot id="dailyRevenueFoot"></tfoot>
+                </table>
+            </div>
+        </div>
+
         {{-- section 3 --}}
         <div class="row mb-5" <?php if (isset($trip)) echo "hidden" ?>>
             <div class="col-12 incomeSection">
@@ -723,6 +746,113 @@ $endYear = date('Y') + 1;
             },
         },
     });
+
+    // Section 2b: Daily Revenue
+    var ticketPrice = function (ticket) {
+        return ticket.tp_price > 0 ? ticket.tp_price : (ticket.tb_price / ticket.passenger_count_tb);
+    };
+    var dayOf = function (dateStr) {
+        return parseInt(String(dateStr).substring(8, 10), 10);
+    };
+
+    var revenueRouteToGroup = {};
+    reportData.trip_route_grouped.forEach(function (rg) {
+        rg.route.forEach(function (id) { revenueRouteToGroup[Number(id)] = rg.id; });
+    });
+
+    var revenueByDayRoute = {};
+    var revenueByDay = {};
+    var ticketCountByDay = {};
+    var hasOtherRoute = false;
+    reportData.getTicket.forEach(function (ticket) {
+        var day = dayOf(ticket.departure_date);
+        var groupId = revenueRouteToGroup[Number(ticket.trip_route_id)];
+        if (groupId === undefined) { groupId = 'other'; hasOtherRoute = true; }
+        var price = ticketPrice(ticket);
+        revenueByDayRoute[day] = revenueByDayRoute[day] || {};
+        revenueByDayRoute[day][groupId] = (revenueByDayRoute[day][groupId] || 0) + price;
+        revenueByDay[day] = (revenueByDay[day] || 0) + price;
+        ticketCountByDay[day] = (ticketCountByDay[day] || 0) + 1;
+    });
+
+    var sellingByDay = {};
+    reportData.getBuy.forEach(function (ticket) {
+        var day = dayOf(ticket.buy_date);
+        sellingByDay[day] = (sellingByDay[day] || 0) + ticketPrice(ticket);
+    });
+
+    new Chart(document.getElementById('dailyRevenueChart'), {
+        type: 'line',
+        data: {
+            labels: dailyLabels,
+            datasets: [
+                {
+                    label: 'Tiket Berangkat',
+                    data: dailyLabels.map(function (d) { return Math.round(revenueByDay[d] || 0); }),
+                    borderColor: '#ff0000',
+                    fill: false,
+                    pointBorderWidth: 4,
+                },
+                {
+                    label: 'Penjualan Tiket',
+                    data: dailyLabels.map(function (d) { return Math.round(sellingByDay[d] || 0); }),
+                    borderColor: '#0066ff',
+                    fill: false,
+                    pointBorderWidth: 4,
+                },
+            ],
+        },
+        options: {
+            responsive: true,
+            tooltips: {
+                callbacks: {
+                    label: function (item, data) {
+                        return data.datasets[item.datasetIndex].label + ': ' + formatIDR(item.yLabel);
+                    },
+                },
+            },
+            scales: {
+                xAxes: [{ scaleLabel: { display: true, labelString: 'Tanggal' } }],
+                yAxes: [{ ticks: { beginAtZero: true, callback: function (value) { return formatIDR(value); } } }],
+            },
+        },
+    });
+
+    var revenueColumns = reportData.trip_route_grouped.map(function (rg) { return { id: rg.id, name: rg.name_x }; });
+    if (hasOtherRoute) revenueColumns.push({ id: 'other', name: 'Rute Lainnya' });
+
+    document.getElementById('dailyRevenueHead').innerHTML = '<tr>'
+        + '<th>Tanggal</th>'
+        + revenueColumns.map(function (c) { return '<th class="text-right">' + c.name + '</th>'; }).join('')
+        + '<th class="text-right">Tiket Berangkat</th>'
+        + '<th class="text-center">Jumlah Tiket</th>'
+        + '<th class="text-right">Penjualan Tiket</th>'
+        + '</tr>';
+
+    document.getElementById('dailyRevenueBody').innerHTML = dailyLabels.map(function (d) {
+        var row = revenueByDayRoute[d] || {};
+        return '<tr>'
+            + '<td>' + String(d).padStart(2, '0') + '/' + String(reportData.month).padStart(2, '0') + '/' + reportData.year + '</td>'
+            + revenueColumns.map(function (c) { return '<td class="text-right">' + formatIDR(row[c.id] || 0) + '</td>'; }).join('')
+            + '<td class="text-right"><strong>' + formatIDR(revenueByDay[d] || 0) + '</strong></td>'
+            + '<td class="text-center">' + (ticketCountByDay[d] || 0) + '</td>'
+            + '<td class="text-right"><strong>' + formatIDR(sellingByDay[d] || 0) + '</strong></td>'
+            + '</tr>';
+    }).join('');
+
+    var sumDays = function (map) {
+        return dailyLabels.reduce(function (s, d) { return s + (map[d] || 0); }, 0);
+    };
+    document.getElementById('dailyRevenueFoot').innerHTML = '<tr>'
+        + '<th>Total</th>'
+        + revenueColumns.map(function (c) {
+            var sum = dailyLabels.reduce(function (s, d) { return s + ((revenueByDayRoute[d] || {})[c.id] || 0); }, 0);
+            return '<th class="text-right">' + formatIDR(sum) + '</th>';
+        }).join('')
+        + '<th class="text-right">' + formatIDR(sumDays(revenueByDay)) + '</th>'
+        + '<th class="text-center">' + sumDays(ticketCountByDay) + '</th>'
+        + '<th class="text-right">' + formatIDR(sumDays(sellingByDay)) + '</th>'
+        + '</tr>';
 
     // Section 3: Occupancy By Route
     var routeTicketMap = reportData.getTicket.reduce(function (acc, ticket) {
